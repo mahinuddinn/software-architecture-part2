@@ -18,8 +18,8 @@ import java.util.List;
  * ---------
  * Main GUI window for the Healthcare Referral System.
  *
- * Implements basic patient management functionality
- * using MVC principles.
+ * Provides basic patient management functionality
+ * including viewing, adding, and deleting patients.
  */
 public class MainFrame extends JFrame {
 
@@ -91,6 +91,7 @@ public class MainFrame extends JFrame {
         JButton deleteButton = new JButton("Delete Patient");
 
         addButton.addActionListener(e -> addPatient());
+        deleteButton.addActionListener(e -> deletePatient());
 
         JPanel panel = new JPanel();
         panel.add(addButton);
@@ -151,6 +152,47 @@ public class MainFrame extends JFrame {
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this,
                     ex.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    /**
+     * Handles Delete Patient button action.
+     */
+    private void deletePatient() {
+
+        int selectedRow = patientTable.getSelectedRow();
+
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this,
+                    "Please select a patient to delete.",
+                    "No Selection",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        String nhs = tableModel.getValueAt(selectedRow, 0).toString();
+
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Are you sure you want to delete patient with NHS:\n" + nhs,
+                "Confirm Delete",
+                JOptionPane.YES_NO_OPTION);
+
+        if (confirm != JOptionPane.YES_OPTION) return;
+
+        try {
+            patientRepository.deletePatient(nhs);
+            tableModel.removeRow(selectedRow);
+
+            JOptionPane.showMessageDialog(this,
+                    "Patient deleted successfully.",
+                    "Deleted",
+                    JOptionPane.INFORMATION_MESSAGE);
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this,
+                    e.getMessage(),
                     "Error",
                     JOptionPane.ERROR_MESSAGE);
         }
