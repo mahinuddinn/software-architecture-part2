@@ -10,3 +10,4 @@ RX008,P001,C001,,2025-09-15,Ibuprofen,400mg
 RX009,P003,C003,,2025-08-20,Amlodipine,5mg
 RX010,P005,C005,A005,2025-09-25,Atorvastatin,40mg
 RX999,9999999999,CL001,Amoxicillin,500mg,Boots Pharmacy,Pending
+RX_TEST_001,9999999999,CL001,Paracetamol,500mg,Boots,Pending

@@ -1,0 +1,12 @@
+PRESCRIPTION
+----------------------------------
+Prescription ID: RX_TEST_001
+Patient NHS Number: 9999999999
+Clinician ID: CL001
+
+Medication: Paracetamol
+Dosage: 500mg
+Pharmacy: Boots
+Collection Status: Pending
+
+Generated: 2025-12-19T23:39:03.320991300
