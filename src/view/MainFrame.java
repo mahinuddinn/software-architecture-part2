@@ -8,6 +8,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JButton;
 import javax.swing.JPanel;
+import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 import java.awt.BorderLayout;
 import java.util.List;
@@ -17,42 +18,32 @@ import java.util.List;
  * ---------
  * Main GUI window for the Healthcare Referral System.
  *
- * This class represents the View layer in the MVC architecture.
- * It is responsible only for displaying data and capturing user actions.
- * No business logic or file I/O should be handled here.
+ * Implements basic patient management functionality
+ * using MVC principles.
  */
 public class MainFrame extends JFrame {
 
-    /** Table used to display patient records */
     private JTable patientTable;
-
-    /** Table model backing the patient table */
     private DefaultTableModel tableModel;
+    private PatientRepository patientRepository;
 
-    /**
-     * Constructs the main application window.
-     */
     public MainFrame() {
 
         setTitle("Healthcare Referral System");
         setSize(900, 500);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-
-        // Use BorderLayout to position table and buttons
         setLayout(new BorderLayout());
+
+        patientRepository = new PatientRepository();
 
         initialisePatientTable();
         loadPatientData();
 
-        // Add components to the frame
         add(new JScrollPane(patientTable), BorderLayout.CENTER);
         add(createButtonPanel(), BorderLayout.SOUTH);
     }
 
-    /**
-     * Initialises the patient JTable and its columns.
-     */
     private void initialisePatientTable() {
 
         String[] columnNames = {
@@ -68,16 +59,12 @@ public class MainFrame extends JFrame {
         patientTable = new JTable(tableModel);
     }
 
-    /**
-     * Loads patient data from the repository and displays it in the table.
-     */
     private void loadPatientData() {
 
         try {
-            PatientRepository repository = new PatientRepository();
-            repository.load("data/patients.csv");
+            patientRepository.load("data/patients.csv");
 
-            List<Patient> patients = repository.getAll();
+            List<Patient> patients = patientRepository.getAll();
 
             for (Patient p : patients) {
                 tableModel.addRow(new Object[]{
@@ -91,23 +78,81 @@ public class MainFrame extends JFrame {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Failed to load patients: " + e.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    /**
-     * Creates a panel containing action buttons.
-     * At this stage, buttons are present but have no logic attached.
-     */
     private JPanel createButtonPanel() {
 
         JButton addButton = new JButton("Add Patient");
         JButton deleteButton = new JButton("Delete Patient");
+
+        addButton.addActionListener(e -> addPatient());
 
         JPanel panel = new JPanel();
         panel.add(addButton);
         panel.add(deleteButton);
 
         return panel;
+    }
+
+    /**
+     * Handles Add Patient button action.
+     */
+    private void addPatient() {
+
+        try {
+            String nhs = JOptionPane.showInputDialog(this, "Enter NHS Number:");
+            if (nhs == null || nhs.isBlank()) return;
+
+            String firstName = JOptionPane.showInputDialog(this, "Enter First Name:");
+            if (firstName == null || firstName.isBlank()) return;
+
+            String lastName = JOptionPane.showInputDialog(this, "Enter Last Name:");
+            if (lastName == null || lastName.isBlank()) return;
+
+            String dob = JOptionPane.showInputDialog(this, "Enter Date of Birth (YYYY-MM-DD):");
+            if (dob == null || dob.isBlank()) return;
+
+            String phone = JOptionPane.showInputDialog(this, "Enter Phone Number:");
+            if (phone == null) phone = "";
+
+            String gp = JOptionPane.showInputDialog(this, "Enter GP Surgery:");
+            if (gp == null) gp = "";
+
+            Patient newPatient = new Patient(
+                    nhs,
+                    firstName,
+                    lastName,
+                    dob,
+                    phone,
+                    gp
+            );
+
+            patientRepository.addPatient(newPatient);
+
+            tableModel.addRow(new Object[]{
+                    nhs,
+                    firstName,
+                    lastName,
+                    dob,
+                    phone,
+                    gp
+            });
+
+            JOptionPane.showMessageDialog(this,
+                    "Patient added successfully.",
+                    "Success",
+                    JOptionPane.INFORMATION_MESSAGE);
+
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                    ex.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
     }
 }
