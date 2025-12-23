@@ -37,42 +37,34 @@ public class PrescriptionRepository {
      * @param filePath path to prescriptions.csv
      */
     public void load(String filePath) throws IOException {
-        this.sourceFilePath = filePath;
-        prescriptions.clear();
 
-        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+    prescriptions.clear();
 
-            // Skip header
-            br.readLine();
+    try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
 
-            String line;
-            while ((line = br.readLine()) != null) {
-                String[] cols = line.split(",");
+        String header = br.readLine(); // skip header
+        if (header == null) return;
 
-                /*
-                 * Expected CSV format:
-                 * 0 prescriptionId
-                 * 1 patientNhsNumber
-                 * 2 clinicianId
-                 * 3 medication
-                 * 4 dosage
-                 * 5 pharmacy
-                 * 6 collectionStatus
-                 */
-                Prescription p = new Prescription(
-                        cols[0],
-                        cols[1],
-                        cols[2],
-                        cols[3],
-                        cols[4],
-                        cols[5],
-                        cols[6]
-                );
+        String line;
+        while ((line = br.readLine()) != null) {
 
-                prescriptions.add(p);
-            }
+            String[] cols = line.split(",", -1);
+            if (cols.length < 7) continue;
+
+            Prescription p = new Prescription(
+                    cols[0].trim(), // prescriptionId
+                    cols[1].trim(), // patientNhsNumber
+                    cols[2].trim(), // clinicianId
+                    cols[3].trim(), // medication
+                    cols[4].trim(), // dosage
+                    cols[5].trim(), // pharmacy
+                    cols[6].trim()  // collectionStatus
+            );
+
+            prescriptions.add(p);
         }
     }
+}
 
     /**
      * Returns all prescriptions (copy to protect internal list).

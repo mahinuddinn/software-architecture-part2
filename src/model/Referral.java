@@ -3,35 +3,40 @@ package model;
 /**
  * Referral
  * --------
- * Domain model representing a referral record.
+ * Represents a referral from primary care to secondary care.
  *
- * This class directly reflects the structure of referrals.csv
- * and is used by both:
- *  - ReferralRepository (loading/display)
- *  - ReferralManager (Singleton processing & output)
+ * This is a PURE DOMAIN MODEL (MVC - Model layer).
+ * It contains ONLY data + getters.
  */
 public class Referral {
 
     private String referralId;
-    private String referringClinicianId;
-    private String referringFacilityId;
-    private String referredToFacilityId;
+    private String patientNhsNumber;
+    private String fromFacility;
+    private String toFacility;
     private String clinicalSummary;
     private String urgencyLevel;
     private String createdDate;
 
-    public Referral(String referralId,
-                    String referringClinicianId,
-                    String referringFacilityId,
-                    String referredToFacilityId,
-                    String clinicalSummary,
-                    String urgencyLevel,
-                    String createdDate) {
-
+    /**
+     * Full constructor used by:
+     *  - ReferralRepository (CSV loading)
+     *  - MainFrame (GUI creation)
+     *  - ReferralManager (Singleton processing)
+     */
+    public Referral(
+            String referralId,
+            String patientNhsNumber,
+            String fromFacility,
+            String toFacility,
+            String clinicalSummary,
+            String urgencyLevel,
+            String createdDate
+    ) {
         this.referralId = referralId;
-        this.referringClinicianId = referringClinicianId;
-        this.referringFacilityId = referringFacilityId;
-        this.referredToFacilityId = referredToFacilityId;
+        this.patientNhsNumber = patientNhsNumber;
+        this.fromFacility = fromFacility;
+        this.toFacility = toFacility;
         this.clinicalSummary = clinicalSummary;
         this.urgencyLevel = urgencyLevel;
         this.createdDate = createdDate;
@@ -41,16 +46,16 @@ public class Referral {
         return referralId;
     }
 
-    public String getReferringClinicianId() {
-        return referringClinicianId;
+    public String getPatientNhsNumber() {
+        return patientNhsNumber;
     }
 
-    public String getReferringFacilityId() {
-        return referringFacilityId;
+    public String getFromFacility() {
+        return fromFacility;
     }
 
-    public String getReferredToFacilityId() {
-        return referredToFacilityId;
+    public String getToFacility() {
+        return toFacility;
     }
 
     public String getClinicalSummary() {

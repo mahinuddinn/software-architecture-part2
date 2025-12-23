@@ -18,12 +18,9 @@ import java.awt.BorderLayout;
  * Main GUI window for the Healthcare Referral System.
  *
  * VIEW layer of MVC:
- *  - Displays patients, prescriptions, and referrals
+ *  - Displays Patients, Prescriptions, and Referrals
  *  - Collects user input
- *  - Delegates processing to repositories / managers
- *
- * Business logic, persistence, and file output
- * are handled in the Model layer.
+ *  - Delegates persistence + logic to repositories / managers
  */
 public class MainFrame extends JFrame {
 
@@ -58,12 +55,12 @@ public class MainFrame extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        // Initialise repositories (Model layer)
+        // Initialise repositories (MODEL layer)
         patientRepository = new PatientRepository();
         prescriptionRepository = new PrescriptionRepository();
         referralRepository = new ReferralRepository();
 
-        // Tabbed interface
+        // Tabs
         JTabbedPane tabs = new JTabbedPane();
         tabs.addTab("Patients", createPatientPanel());
         tabs.addTab("Prescriptions", createPrescriptionPanel());
@@ -122,13 +119,13 @@ public class MainFrame extends JFrame {
                 });
             }
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            showError(e);
         }
     }
 
     private void addPatient() {
         try {
-            Patient patient = new Patient(
+            Patient p = new Patient(
                     JOptionPane.showInputDialog(this, "NHS Number:"),
                     JOptionPane.showInputDialog(this, "First Name:"),
                     JOptionPane.showInputDialog(this, "Last Name:"),
@@ -137,11 +134,11 @@ public class MainFrame extends JFrame {
                     JOptionPane.showInputDialog(this, "GP Surgery:")
             );
 
-            patientRepository.addPatient(patient);
+            patientRepository.addPatient(p);
             loadPatientsIntoTable();
 
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            showError(e);
         }
     }
 
@@ -149,12 +146,12 @@ public class MainFrame extends JFrame {
         int row = patientTable.getSelectedRow();
         if (row == -1) return;
 
-        String nhs = patientTableModel.getValueAt(row, 0).toString();
         try {
+            String nhs = patientTableModel.getValueAt(row, 0).toString();
             patientRepository.deletePatient(nhs);
-            patientTableModel.removeRow(row);
+            loadPatientsIntoTable();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            showError(e);
         }
     }
 
@@ -167,8 +164,13 @@ public class MainFrame extends JFrame {
         JPanel panel = new JPanel(new BorderLayout());
 
         String[] columns = {
-                "Prescription ID", "Patient NHS", "Clinician ID",
-                "Medication", "Dosage", "Pharmacy", "Status"
+                "Prescription ID",
+                "Patient NHS",
+                "Clinician ID",
+                "Medication",
+                "Dosage",
+                "Pharmacy",
+                "Status"
         };
 
         prescriptionTableModel = new DefaultTableModel(columns, 0);
@@ -205,7 +207,7 @@ public class MainFrame extends JFrame {
                 });
             }
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            showError(e);
         }
     }
 
@@ -225,7 +227,7 @@ public class MainFrame extends JFrame {
             loadPrescriptionsIntoTable();
 
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            showError(e);
         }
     }
 
@@ -239,11 +241,12 @@ public class MainFrame extends JFrame {
 
         String[] columns = {
                 "Referral ID",
-                "Referring Clinician",
+                "Patient NHS",
                 "From Facility",
                 "To Facility",
                 "Urgency",
-                "Created Date"
+                "Created Date",
+                "Clinical Summary"
         };
 
         referralTableModel = new DefaultTableModel(columns, 0);
@@ -271,15 +274,16 @@ public class MainFrame extends JFrame {
             for (Referral r : referralRepository.getAll()) {
                 referralTableModel.addRow(new Object[]{
                         r.getReferralId(),
-                        r.getReferringClinicianId(),
-                        r.getReferringFacilityId(),
-                        r.getReferredToFacilityId(),
+                        r.getPatientNhsNumber(),
+                        r.getFromFacility(),
+                        r.getToFacility(),
                         r.getUrgencyLevel(),
-                        r.getCreatedDate()
+                        r.getCreatedDate(),
+                        r.getClinicalSummary()
                 });
             }
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            showError(e);
         }
     }
 
@@ -288,15 +292,15 @@ public class MainFrame extends JFrame {
         try {
             Referral referral = new Referral(
                     JOptionPane.showInputDialog(this, "Referral ID:"),
-                    JOptionPane.showInputDialog(this, "Referring Clinician ID:"),
-                    JOptionPane.showInputDialog(this, "Referring Facility ID:"),
-                    JOptionPane.showInputDialog(this, "Referred To Facility ID:"),
+                    JOptionPane.showInputDialog(this, "Patient NHS Number:"),
+                    JOptionPane.showInputDialog(this, "From Facility:"),
+                    JOptionPane.showInputDialog(this, "To Facility:"),
                     JOptionPane.showInputDialog(this, "Clinical Summary:"),
                     JOptionPane.showInputDialog(this, "Urgency Level:"),
                     java.time.LocalDate.now().toString()
             );
 
-            // SINGLETON usage (rubric requirement)
+            // ✅ SINGLETON (rubric requirement)
             ReferralManager.getInstance().processReferral(referral);
 
             loadReferralsIntoTable();
@@ -304,7 +308,18 @@ public class MainFrame extends JFrame {
             JOptionPane.showMessageDialog(this, "Referral created successfully.");
 
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            showError(e);
         }
+    }
+
+    /* ===================================================== */
+
+    private void showError(Exception e) {
+        JOptionPane.showMessageDialog(
+                this,
+                e.getMessage(),
+                "Error",
+                JOptionPane.ERROR_MESSAGE
+        );
     }
 }
