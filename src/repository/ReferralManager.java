@@ -3,39 +3,28 @@ package repository;
 import model.Referral;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.time.LocalDateTime;
 
 /**
  * ReferralManager (Singleton)
  * ---------------------------
- * Responsible for managing patient referrals between
- * primary and secondary care.
+ * Handles referral processing and output generation.
  *
- * This class uses the Singleton pattern to ensure that
- * only one referral manager exists during application runtime.
- * This prevents duplicate referrals and ensures consistent
- * referral processing and audit trails.
+ * Demonstrates correct use of the Singleton pattern
+ * as required by the assignment.
  */
 public class ReferralManager {
 
-    /** The single instance of ReferralManager */
     private static ReferralManager instance;
 
-    /** Path to referrals CSV file */
-    private final String referralCsvPath = "data/referrals.csv";
+    private static final String OUTPUT_DIR = "output/referrals";
 
-    /**
-     * Private constructor prevents external instantiation.
-     */
-    private ReferralManager() {
-    }
+    private ReferralManager() {}
 
     /**
      * Returns the single instance of ReferralManager.
-     *
-     * @return ReferralManager instance
      */
     public static ReferralManager getInstance() {
         if (instance == null) {
@@ -45,11 +34,8 @@ public class ReferralManager {
     }
 
     /**
-     * Creates a referral, writes it to referrals.csv,
-     * and generates a text file representing the referral email.
-     *
-     * @param referral Referral to process
-     * @throws IOException if file writing fails
+     * Processes a referral by generating a text file
+     * representing a referral notification.
      */
     public void processReferral(Referral referral) throws IOException {
 
@@ -57,66 +43,38 @@ public class ReferralManager {
             throw new IllegalArgumentException("Referral cannot be null");
         }
 
-        appendReferralToCsv(referral);
-        generateReferralTextFile(referral);
-    }
+        File dir = new File(OUTPUT_DIR);
+        if (!dir.exists()) dir.mkdirs();
 
-    /**
-     * Appends a referral record to referrals.csv.
-     */
-    private void appendReferralToCsv(Referral referral) throws IOException {
+        String fileName = OUTPUT_DIR + "/referral_" +
+                referral.getReferralId() + ".txt";
 
-        try (BufferedWriter writer =
-                     new BufferedWriter(new FileWriter(referralCsvPath, true))) {
-
-            writer.write(String.join(",",
-                    safe(referral.getReferralId()),
-                    safe(referral.getPatientNhsNumber()),
-                    safe(referral.getFromFacility()),
-                    safe(referral.getToFacility()),
-                    safe(referral.getClinicalSummary()),
-                    safe(referral.getUrgencyLevel()),
-                    LocalDateTime.now().toString()
-            ));
-            writer.newLine();
-        }
-    }
-
-    /**
-     * Generates a text file representing a referral email.
-     * This simulates electronic referral communication.
-     */
-    private void generateReferralTextFile(Referral referral) throws IOException {
-
-        String filename = "referral_" + referral.getReferralId() + ".txt";
-
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName))) {
 
             writer.write("REFERRAL NOTICE");
             writer.newLine();
             writer.write("----------------------------");
             writer.newLine();
+
             writer.write("Referral ID: " + referral.getReferralId());
             writer.newLine();
-            writer.write("Patient NHS Number: " + referral.getPatientNhsNumber());
+            writer.write("Referring Clinician: " + referral.getReferringClinicianId());
             writer.newLine();
-            writer.write("From Facility: " + referral.getFromFacility());
+            writer.write("From Facility: " + referral.getReferringFacilityId());
             writer.newLine();
-            writer.write("Referred To: " + referral.getToFacility());
+            writer.write("To Facility: " + referral.getReferredToFacilityId());
             writer.newLine();
-            writer.write("Urgency Level: " + referral.getUrgencyLevel());
+            writer.write("Urgency: " + referral.getUrgencyLevel());
             writer.newLine();
             writer.newLine();
+
             writer.write("Clinical Summary:");
             writer.newLine();
             writer.write(referral.getClinicalSummary());
-        }
-    }
+            writer.newLine();
+            writer.newLine();
 
-    /**
-     * Sanitises values before writing to CSV.
-     */
-    private String safe(String value) {
-        return value == null ? "" : value.replace(",", " ");
+            writer.write("Created Date: " + referral.getCreatedDate());
+        }
     }
 }

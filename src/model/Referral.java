@@ -3,48 +3,35 @@ package model;
 /**
  * Referral
  * --------
- * Represents a referral from primary care to secondary care.
+ * Domain model representing a referral record.
  *
- * Referral creation and processing is managed by a Singleton ReferralManager
- * to ensure consistency, prevent duplication, and maintain audit trails.
+ * This class directly reflects the structure of referrals.csv
+ * and is used by both:
+ *  - ReferralRepository (loading/display)
+ *  - ReferralManager (Singleton processing & output)
  */
 public class Referral {
 
-    /** Unique referral identifier */
     private String referralId;
-
-    /** Patient NHS number */
-    private String patientNhsNumber;
-
-    /** Originating facility */
-    private String fromFacility;
-
-    /** Destination facility */
-    private String toFacility;
-
-    /** Clinical summary explaining reason for referral */
+    private String referringClinicianId;
+    private String referringFacilityId;
+    private String referredToFacilityId;
     private String clinicalSummary;
-
-    /** Urgency level (Routine, Urgent, Emergency) */
     private String urgencyLevel;
-
-    /** Date referral was created */
     private String createdDate;
 
-    /**
-     * Constructs a Referral object.
-     */
     public Referral(String referralId,
-                    String patientNhsNumber,
-                    String fromFacility,
-                    String toFacility,
+                    String referringClinicianId,
+                    String referringFacilityId,
+                    String referredToFacilityId,
                     String clinicalSummary,
                     String urgencyLevel,
                     String createdDate) {
+
         this.referralId = referralId;
-        this.patientNhsNumber = patientNhsNumber;
-        this.fromFacility = fromFacility;
-        this.toFacility = toFacility;
+        this.referringClinicianId = referringClinicianId;
+        this.referringFacilityId = referringFacilityId;
+        this.referredToFacilityId = referredToFacilityId;
         this.clinicalSummary = clinicalSummary;
         this.urgencyLevel = urgencyLevel;
         this.createdDate = createdDate;
@@ -54,16 +41,16 @@ public class Referral {
         return referralId;
     }
 
-    public String getPatientNhsNumber() {
-        return patientNhsNumber;
+    public String getReferringClinicianId() {
+        return referringClinicianId;
     }
 
-    public String getFromFacility() {
-        return fromFacility;
+    public String getReferringFacilityId() {
+        return referringFacilityId;
     }
 
-    public String getToFacility() {
-        return toFacility;
+    public String getReferredToFacilityId() {
+        return referredToFacilityId;
     }
 
     public String getClinicalSummary() {

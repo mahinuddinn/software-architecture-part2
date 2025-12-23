@@ -1,0 +1,9 @@
+REFERRAL NOTICE
+----------------------------------
+Referral ID: null
+Patient NHS Number: null
+From Facility: null
+To Facility: null
+Urgency: null
+
+Clinical Summary:
