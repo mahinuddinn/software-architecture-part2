@@ -3,7 +3,9 @@ package repository;
 import model.Clinician;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,58 +13,48 @@ import java.util.List;
 /**
  * ClinicianRepository
  * -------------------
- * Responsible for loading clinician records from a CSV file
- * and storing them in memory for use by controllers and the GUI.
+ * Handles loading, storing, and persisting Clinician records.
  *
- * This repository is intentionally read-only, as clinicians are
- * not created or modified by end users within the system.
+ * This is part of the MODEL layer in MVC.
  */
 public class ClinicianRepository {
 
-    /**
-     * In-memory list of clinicians.
-     */
+    /** In-memory storage of clinicians */
     private final List<Clinician> clinicians = new ArrayList<>();
+
+    /** CSV file path (set on load) */
+    private String sourceFilePath;
 
     /**
      * Loads clinicians from a CSV file.
      *
-     * @param filePath path to clinicians.csv (e.g. "data/clinicians.csv")
-     * @throws IOException if file cannot be read
+     * Expected header:
+     * clinicianId,name,role,specialty,workplace
      */
     public void load(String filePath) throws IOException {
 
+        this.sourceFilePath = filePath;
         clinicians.clear();
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
 
-            // Skip header row
-            String header = reader.readLine();
-            if (header == null) return;
+            // Skip header
+            br.readLine();
 
             String line;
-            while ((line = reader.readLine()) != null) {
+            while ((line = br.readLine()) != null) {
 
-                String[] cols = CsvUtil.splitCsvLine(line);
+                String[] cols = line.split(",", -1);
 
-                /*
-                 * Expected clinicians.csv column order:
-                 * 0 = clinicianId
-                 * 1 = name
-                 * 2 = role
-                 * 3 = specialty
-                 * 4 = workplace
-                 */
-                String id = CsvUtil.get(cols, 0);
-                String name = CsvUtil.get(cols, 1);
-                String role = CsvUtil.get(cols, 2);
-                String specialty = CsvUtil.get(cols, 3);
-                String workplace = CsvUtil.get(cols, 4);
+                if (cols.length < 5) continue;
 
-                if (id.isEmpty()) continue;
-
-                Clinician clinician =
-                        new Clinician(id, name, role, specialty, workplace);
+                Clinician clinician = new Clinician(
+                        cols[0].trim(),
+                        cols[1].trim(),
+                        cols[2].trim(),
+                        cols[3].trim(),
+                        cols[4].trim()
+                );
 
                 clinicians.add(clinician);
             }
@@ -70,9 +62,53 @@ public class ClinicianRepository {
     }
 
     /**
-     * Returns a copy of all clinicians.
+     * Returns all clinicians.
      */
     public List<Clinician> getAll() {
         return new ArrayList<>(clinicians);
+    }
+
+    /**
+     * Adds a clinician and saves to CSV.
+     */
+    public void add(Clinician clinician) throws IOException {
+
+        if (clinician == null || clinician.getClinicianId().isBlank()) {
+            throw new IllegalArgumentException("Clinician ID is required.");
+        }
+
+        clinicians.add(clinician);
+        saveToCsv();
+    }
+
+    /**
+     * Persists clinicians back to CSV.
+     */
+    private void saveToCsv() throws IOException {
+
+        if (sourceFilePath == null) {
+            throw new IllegalStateException("CSV file path not set. Call load() first.");
+        }
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(sourceFilePath))) {
+
+            writer.write("clinicianId,name,role,specialty,workplace");
+            writer.newLine();
+
+            for (Clinician c : clinicians) {
+                writer.write(String.join(",",
+                        safe(c.getClinicianId()),
+                        safe(c.getName()),
+                        safe(c.getRole()),
+                        safe(c.getSpecialty()),
+                        safe(c.getWorkplace())
+                ));
+                writer.newLine();
+            }
+        }
+    }
+
+    private String safe(String value) {
+        return value == null ? "" : value.replace(",", " ");
     }
 }

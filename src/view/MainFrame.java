@@ -7,6 +7,9 @@ import repository.PatientRepository;
 import repository.PrescriptionRepository;
 import repository.ReferralManager;
 import repository.ReferralRepository;
+import model.Clinician;
+import repository.ClinicianRepository;
+
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -45,6 +48,14 @@ public class MainFrame extends JFrame {
     private DefaultTableModel referralTableModel;
     private ReferralRepository referralRepository;
 
+    /* =======================
+   CLINICIAN COMPONENTS
+   ======================= */
+    private JTable clinicianTable;
+    private DefaultTableModel clinicianTableModel;
+    private ClinicianRepository clinicianRepository;
+
+
     /**
      * Constructs the main application window.
      */
@@ -59,12 +70,17 @@ public class MainFrame extends JFrame {
         patientRepository = new PatientRepository();
         prescriptionRepository = new PrescriptionRepository();
         referralRepository = new ReferralRepository();
+        clinicianRepository = new ClinicianRepository();
+
+    
 
         // Tabs
         JTabbedPane tabs = new JTabbedPane();
         tabs.addTab("Patients", createPatientPanel());
+        tabs.addTab("Clinicians", createClinicianPanel());
         tabs.addTab("Prescriptions", createPrescriptionPanel());
         tabs.addTab("Referrals", createReferralPanel());
+        
 
         add(tabs, BorderLayout.CENTER);
     }
@@ -154,6 +170,88 @@ public class MainFrame extends JFrame {
             showError(e);
         }
     }
+
+/* =====================================================
+   CLINICIANS TAB
+   ===================================================== */
+
+private JPanel createClinicianPanel() {
+
+    JPanel panel = new JPanel(new BorderLayout());
+
+    String[] columns = {
+            "Clinician ID",
+            "Name",
+            "Role",
+            "Specialty",
+            "Workplace"
+    };
+
+    clinicianTableModel = new DefaultTableModel(columns, 0);
+    clinicianTable = new JTable(clinicianTableModel);
+
+    loadCliniciansIntoTable();
+
+    JButton addButton = new JButton("Add Clinician");
+    addButton.addActionListener(e -> addClinician());
+
+    JPanel bottomPanel = new JPanel();
+    bottomPanel.add(addButton);
+
+    panel.add(new JScrollPane(clinicianTable), BorderLayout.CENTER);
+    panel.add(bottomPanel, BorderLayout.SOUTH);
+
+    return panel;
+}
+
+private void loadCliniciansIntoTable() {
+
+    try {
+        clinicianRepository.load("data/clinicians.csv");
+        clinicianTableModel.setRowCount(0);
+
+        for (Clinician c : clinicianRepository.getAll()) {
+            clinicianTableModel.addRow(new Object[]{
+                    c.getClinicianId(),
+                    c.getName(),
+                    c.getRole(),
+                    c.getSpecialty(),
+                    c.getWorkplace()
+            });
+        }
+
+    } catch (Exception e) {
+        showError(e);
+    }
+}
+
+private void addClinician() {
+
+    try {
+        Clinician clinician = new Clinician(
+                JOptionPane.showInputDialog(this, "Clinician ID:"),
+                JOptionPane.showInputDialog(this, "Full Name:"),
+                JOptionPane.showInputDialog(this, "Role (Doctor/Nurse/Specialist):"),
+                JOptionPane.showInputDialog(this, "Specialty:"),
+                JOptionPane.showInputDialog(this, "Workplace:")
+        );
+
+        clinicianRepository.add(clinician);
+        loadCliniciansIntoTable();
+
+        JOptionPane.showMessageDialog(
+                this,
+                "Clinician added successfully.",
+                "Success",
+                JOptionPane.INFORMATION_MESSAGE
+        );
+
+    } catch (Exception e) {
+        showError(e);
+    }
+}
+
+    
 
     /* =====================================================
        PRESCRIPTIONS TAB
