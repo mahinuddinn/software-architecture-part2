@@ -3,44 +3,63 @@ package model;
 /**
  * Referral
  * --------
- * Represents a referral from primary care to secondary care.
+ * Domain model representing a referral from primary care
+ * to secondary care.
  *
- * This is a PURE DOMAIN MODEL (MVC - Model layer).
- * It contains ONLY data + getters.
+ * This class is part of the MODEL layer in MVC.
+ * It contains only data + getters (NO logic).
  */
 public class Referral {
 
+    /* =========================
+       CORE REFERRAL FIELDS
+       ========================= */
+
     private String referralId;
     private String patientNhsNumber;
-    private String fromFacility;
-    private String toFacility;
+
+    /** Clinician who made the referral */
+    private String referringClinicianId;
+
+    /** Facilities involved */
+    private String fromFacilityId;
+    private String toFacilityId;
+
+    /** Clinical information */
     private String clinicalSummary;
     private String urgencyLevel;
-    private String createdDate;
+
+    /** Date referral was created */
+    private String referralDate;
 
     /**
-     * Full constructor used by:
-     *  - ReferralRepository (CSV loading)
-     *  - MainFrame (GUI creation)
-     *  - ReferralManager (Singleton processing)
+     * FULL constructor
+     * ----------------
+     * This constructor EXACTLY matches how MainFrame creates referrals.
      */
     public Referral(
             String referralId,
             String patientNhsNumber,
-            String fromFacility,
-            String toFacility,
+            String referringClinicianId,
+            String fromFacilityId,
+            String toFacilityId,
             String clinicalSummary,
             String urgencyLevel,
-            String createdDate
+            String referralDate
     ) {
         this.referralId = referralId;
         this.patientNhsNumber = patientNhsNumber;
-        this.fromFacility = fromFacility;
-        this.toFacility = toFacility;
+        this.referringClinicianId = referringClinicianId;
+        this.fromFacilityId = fromFacilityId;
+        this.toFacilityId = toFacilityId;
         this.clinicalSummary = clinicalSummary;
         this.urgencyLevel = urgencyLevel;
-        this.createdDate = createdDate;
+        this.referralDate = referralDate;
     }
+
+    /* =========================
+       GETTERS (USED BY VIEW)
+       ========================= */
 
     public String getReferralId() {
         return referralId;
@@ -50,12 +69,16 @@ public class Referral {
         return patientNhsNumber;
     }
 
-    public String getFromFacility() {
-        return fromFacility;
+    public String getReferringClinicianId() {
+        return referringClinicianId;
     }
 
-    public String getToFacility() {
-        return toFacility;
+    public String getFromFacilityId() {
+        return fromFacilityId;
+    }
+
+    public String getToFacilityId() {
+        return toFacilityId;
     }
 
     public String getClinicalSummary() {
@@ -66,7 +89,7 @@ public class Referral {
         return urgencyLevel;
     }
 
-    public String getCreatedDate() {
-        return createdDate;
+    public String getReferralDate() {
+        return referralDate;
     }
 }
