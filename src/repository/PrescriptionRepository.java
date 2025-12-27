@@ -1,6 +1,7 @@
 package repository;
 
 import model.Prescription;
+import model.Clinician;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -20,6 +21,7 @@ import java.util.List;
  *  - Allows new prescriptions to be added
  *  - Saves prescriptions back to CSV
  *  - Generates a prescription text file (output requirement)
+ *  - Links prescriptions to clinicians via ClinicianRepository
  *
  * Part of the Model layer in MVC.
  */
@@ -31,6 +33,17 @@ public class PrescriptionRepository {
     /** Original CSV file path (used for persistence) */
     private String sourceFilePath;
 
+    /** Repository used to resolve clinician IDs to Clinician objects */
+    private ClinicianRepository clinicianRepository;
+
+    /**
+     * Injects ClinicianRepository (association).
+     * This enables clinician lookups without tight coupling.
+     */
+    public void setClinicianRepository(ClinicianRepository clinicianRepository) {
+        this.clinicianRepository = clinicianRepository;
+    }
+
     /**
      * Loads prescriptions from a CSV file.
      *
@@ -38,39 +51,56 @@ public class PrescriptionRepository {
      */
     public void load(String filePath) throws IOException {
 
-    prescriptions.clear();
+        this.sourceFilePath = filePath;   // ✅ IMPORTANT FIX
+        prescriptions.clear();
 
-    try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
 
-        String header = br.readLine(); // skip header
-        if (header == null) return;
+            String header = br.readLine(); // skip header
+            if (header == null) return;
 
-        String line;
-        while ((line = br.readLine()) != null) {
+            String line;
+            while ((line = br.readLine()) != null) {
 
-            String[] cols = line.split(",", -1);
-            if (cols.length < 7) continue;
+                String[] cols = line.split(",", -1);
+                if (cols.length < 7) continue;
 
-            Prescription p = new Prescription(
-                    cols[0].trim(), // prescriptionId
-                    cols[1].trim(), // patientNhsNumber
-                    cols[2].trim(), // clinicianId
-                    cols[3].trim(), // medication
-                    cols[4].trim(), // dosage
-                    cols[5].trim(), // pharmacy
-                    cols[6].trim()  // collectionStatus
-            );
+                Prescription p = new Prescription(
+                        cols[0].trim(), // prescriptionId
+                        cols[1].trim(), // patientNhsNumber
+                        cols[2].trim(), // clinicianId
+                        cols[3].trim(), // medication
+                        cols[4].trim(), // dosage
+                        cols[5].trim(), // pharmacy
+                        cols[6].trim()  // collectionStatus
+                );
 
-            prescriptions.add(p);
+                prescriptions.add(p);
+            }
         }
     }
-}
 
     /**
      * Returns all prescriptions (copy to protect internal list).
      */
     public List<Prescription> getAll() {
         return new ArrayList<>(prescriptions);
+    }
+
+    /**
+     * Resolves the clinician responsible for a prescription.
+     * Demonstrates association between Prescription and Clinician.
+     *
+     * @param prescription prescription record
+     * @return Clinician object or null if not found
+     */
+    public Clinician getClinicianForPrescription(Prescription prescription) {
+
+        if (clinicianRepository == null || prescription == null) {
+            return null;
+        }
+
+        return clinicianRepository.findById(prescription.getClinicianId());
     }
 
     /**
@@ -96,6 +126,8 @@ public class PrescriptionRepository {
         // Generate output text file
         writePrescriptionTextFile(prescription);
     }
+
+    
 
     /**
      * Saves all prescriptions back to the CSV file.
@@ -128,13 +160,6 @@ public class PrescriptionRepository {
     }
 
     /**
-     * Prevents commas from breaking CSV structure.
-     */
-    private String safe(String value) {
-        return value == null ? "" : value.replace(",", " ");
-    }
-   
-        /**
      * Generates a formatted prescription text file.
      * Output example: output/prescriptions/prescription_RX001.txt
      */
@@ -150,8 +175,7 @@ public class PrescriptionRepository {
 
         String filename = outputDir + "/prescription_" + prescription.getPrescriptionId() + ".txt";
 
-        try (java.io.BufferedWriter writer =
-                     new java.io.BufferedWriter(new java.io.FileWriter(filename))) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
 
             writer.write("PRESCRIPTION");
             writer.newLine();
@@ -162,7 +186,19 @@ public class PrescriptionRepository {
             writer.newLine();
             writer.write("Patient NHS Number: " + safe(prescription.getPatientNhsNumber()));
             writer.newLine();
-            writer.write("Clinician ID: " + safe(prescription.getClinicianId()));
+
+            // 🔗 Clinician linking (human-readable)
+            if (clinicianRepository != null) {
+                Clinician clinician = clinicianRepository.findById(prescription.getClinicianId());
+                if (clinician != null) {
+                    writer.write("Clinician: " + clinician.getName()
+                            + " (" + clinician.getSpecialty() + ")");
+                } else {
+                    writer.write("Clinician ID: " + safe(prescription.getClinicianId()));
+                }
+            } else {
+                writer.write("Clinician ID: " + safe(prescription.getClinicianId()));
+            }
             writer.newLine();
 
             writer.newLine();
@@ -180,4 +216,10 @@ public class PrescriptionRepository {
         }
     }
 
+    /**
+     * Prevents commas from breaking CSV structure.
+     */
+    private String safe(String value) {
+        return value == null ? "" : value.replace(",", " ");
+    }
 }
