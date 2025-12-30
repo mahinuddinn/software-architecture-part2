@@ -27,6 +27,40 @@ import java.util.List;
  */
 public class PrescriptionRepository {
 
+    /**
+ * Updates an existing prescription (matched by prescriptionId).
+ */
+public void updatePrescription(Prescription updated) throws IOException {
+
+    for (int i = 0; i < prescriptions.size(); i++) {
+        if (prescriptions.get(i).getPrescriptionId()
+                .equalsIgnoreCase(updated.getPrescriptionId())) {
+
+            prescriptions.set(i, updated);
+            saveToCsv();
+            return;
+        }
+    }
+
+    throw new IllegalArgumentException("Prescription not found.");
+}
+
+/**
+ * Deletes a prescription by ID.
+ */
+public void deletePrescription(String prescriptionId) throws IOException {
+
+    boolean removed = prescriptions.removeIf(p ->
+            p.getPrescriptionId().equalsIgnoreCase(prescriptionId));
+
+    if (!removed) {
+        throw new IllegalArgumentException("Prescription not found.");
+    }
+
+    saveToCsv();
+}
+
+
     /** In-memory list of prescriptions */
     private final List<Prescription> prescriptions = new ArrayList<>();
 
