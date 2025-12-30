@@ -4,38 +4,74 @@ package model;
  * Referral
  * --------
  * Domain model representing a referral from primary care
- * to secondary care.
+ * to secondary/specialist care.
  *
  * This class is part of the MODEL layer in MVC.
- * It contains only data + getters (NO logic).
+ * ✔ Contains ONLY data and getters
+ * ✔ NO business logic
+ * ✔ NO file handling
  */
 public class Referral {
 
     /* =========================
-       CORE REFERRAL FIELDS
+       CORE IDENTIFIERS
        ========================= */
 
+    /** Unique referral identifier (e.g. R001) */
     private String referralId;
+
+    /** NHS number of the patient */
     private String patientNhsNumber;
 
-    /** Clinician who made the referral */
+    /** Clinician who initiated the referral */
     private String referringClinicianId;
 
-    /** Facilities involved */
+    /* =========================
+       FACILITY DETAILS
+       ========================= */
+
+    /** Facility referring from (e.g. GP surgery / clinic) */
     private String fromFacilityId;
+
+    /** Facility referred to (e.g. hospital / department) */
     private String toFacilityId;
 
-    /** Clinical information */
+    /* =========================
+       CLINICAL DETAILS
+       ========================= */
+
+    /** Short reason for referral */
+    private String referralReason;
+
+    /** Detailed clinical summary */
     private String clinicalSummary;
+
+    /** Requested tests or investigations */
+    private String requestedInvestigations;
+
+    /** Urgency level (Routine / Urgent / Non-urgent) */
     private String urgencyLevel;
 
-    /** Date referral was created */
+    /** Current referral status (Pending / Completed / New) */
+    private String status;
+
+    /** Free-text notes */
+    private String notes;
+
+    /* =========================
+       DATES
+       ========================= */
+
+    /** Date the referral was created */
     private String referralDate;
 
     /**
-     * FULL constructor
+     * FULL CONSTRUCTOR
      * ----------------
-     * This constructor EXACTLY matches how MainFrame creates referrals.
+     * This constructor matches:
+     *  - referrals.csv structure
+     *  - ReferralRepository loading logic
+     *  - MainFrame referral creation
      */
     public Referral(
             String referralId,
@@ -43,8 +79,12 @@ public class Referral {
             String referringClinicianId,
             String fromFacilityId,
             String toFacilityId,
+            String referralReason,
             String clinicalSummary,
+            String requestedInvestigations,
             String urgencyLevel,
+            String status,
+            String notes,
             String referralDate
     ) {
         this.referralId = referralId;
@@ -52,8 +92,12 @@ public class Referral {
         this.referringClinicianId = referringClinicianId;
         this.fromFacilityId = fromFacilityId;
         this.toFacilityId = toFacilityId;
+        this.referralReason = referralReason;
         this.clinicalSummary = clinicalSummary;
+        this.requestedInvestigations = requestedInvestigations;
         this.urgencyLevel = urgencyLevel;
+        this.status = status;
+        this.notes = notes;
         this.referralDate = referralDate;
     }
 
@@ -81,12 +125,28 @@ public class Referral {
         return toFacilityId;
     }
 
+    public String getReferralReason() {
+        return referralReason;
+    }
+
     public String getClinicalSummary() {
         return clinicalSummary;
     }
 
+    public String getRequestedInvestigations() {
+        return requestedInvestigations;
+    }
+
     public String getUrgencyLevel() {
         return urgencyLevel;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public String getNotes() {
+        return notes;
     }
 
     public String getReferralDate() {

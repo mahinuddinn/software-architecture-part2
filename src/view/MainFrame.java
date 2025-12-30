@@ -1,15 +1,15 @@
 package view;
 
 import model.Patient;
-import model.Clinician;
 import model.Prescription;
 import model.Referral;
+import model.Clinician;
 
 import repository.PatientRepository;
-import repository.ClinicianRepository;
 import repository.PrescriptionRepository;
 import repository.ReferralRepository;
 import repository.ReferralManager;
+import repository.ClinicianRepository;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -18,119 +18,103 @@ import java.awt.BorderLayout;
 /**
  * MainFrame
  * ---------
- * This class represents the VIEW layer of the application
- * according to the Model-View-Controller (MVC) architecture.
+ * Main GUI window for the Healthcare Referral System.
  *
- * Responsibilities of this class:
- *  - Display data loaded from CSV files (Patients, Clinicians, Prescriptions, Referrals)
- *  - Provide a graphical user interface using Java Swing
- *  - Capture user input (add/delete operations)
- *  - Delegate data processing and persistence to repositories
+ * MVC ROLE:
+ * ----------
+ * VIEW layer only.
+ *  - Displays data in tables
+ *  - Collects user input via dialogs
+ *  - Delegates all logic + persistence to repositories / managers
  *
- * IMPORTANT:
- *  - No business logic is implemented here
- *  - No file handling is performed here
- *  - All persistence is handled by the Model layer
+ * NO business logic here.
  */
 public class MainFrame extends JFrame {
 
     /* =====================================================
-       MODEL LAYER REFERENCES (Repositories)
-       -----------------------------------------------------
-       These repositories handle all data access and persistence.
-       The View only calls their public methods.
+       REPOSITORIES (MODEL LAYER)
        ===================================================== */
-
-    private final PatientRepository patientRepository = new PatientRepository();
-    private final ClinicianRepository clinicianRepository = new ClinicianRepository();
-    private final PrescriptionRepository prescriptionRepository = new PrescriptionRepository();
-    private final ReferralRepository referralRepository = new ReferralRepository();
+    private final PatientRepository patientRepository;
+    private final ClinicianRepository clinicianRepository;
+    private final PrescriptionRepository prescriptionRepository;
+    private final ReferralRepository referralRepository;
 
     /* =====================================================
-       TABLE MODELS
-       -----------------------------------------------------
-       DefaultTableModel acts as the data model for JTable.
-       Each table has its own model.
+       TABLE MODELS + TABLES
        ===================================================== */
-
-    private DefaultTableModel patientModel;
-    private DefaultTableModel clinicianModel;
-    private DefaultTableModel prescriptionModel;
-    private DefaultTableModel referralModel;
-
-    /* =====================================================
-       TABLE COMPONENTS
-       ===================================================== */
-
     private JTable patientTable;
     private JTable clinicianTable;
     private JTable prescriptionTable;
     private JTable referralTable;
 
+    private DefaultTableModel patientTableModel;
+    private DefaultTableModel clinicianTableModel;
+    private DefaultTableModel prescriptionTableModel;
+    private DefaultTableModel referralTableModel;
+
     /**
-     * Constructs the main application window.
-     * Sets up the tabbed interface and loads initial data.
+     * Application entry GUI
      */
     public MainFrame() {
 
         setTitle("Healthcare Referral System");
         setSize(1200, 650);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null); // centre window
+        setLocationRelativeTo(null);
 
-        // Tabbed layout for each entity
+        // Initialise repositories (MODEL)
+        patientRepository = new PatientRepository();
+        clinicianRepository = new ClinicianRepository();
+        prescriptionRepository = new PrescriptionRepository();
+        referralRepository = new ReferralRepository();
+
+        // Tabbed interface
         JTabbedPane tabs = new JTabbedPane();
-
-        tabs.add("Patients", createPatientPanel());
-        tabs.add("Clinicians", createClinicianPanel());
-        tabs.add("Prescriptions", createPrescriptionPanel());
-        tabs.add("Referrals", createReferralPanel());
+        tabs.addTab("Patients", createPatientPanel());
+        tabs.addTab("Clinicians", createClinicianPanel());
+        tabs.addTab("Prescriptions", createPrescriptionPanel());
+        tabs.addTab("Referrals", createReferralPanel());
 
         add(tabs, BorderLayout.CENTER);
     }
 
     /* =====================================================
-       PATIENT TAB
+       PATIENTS TAB
        ===================================================== */
 
-    /**
-     * Creates the Patients tab panel.
-     */
     private JPanel createPatientPanel() {
 
-        String[] columns = {
-                "NHS Number", "First Name", "Last Name",
-                "Date of Birth", "Phone Number", "GP Surgery"
-        };
+        JPanel panel = new JPanel(new BorderLayout());
 
-        patientModel = new DefaultTableModel(columns, 0);
-        patientTable = new JTable(patientModel);
+        patientTableModel = new DefaultTableModel(
+                new String[]{"NHS Number", "First Name", "Last Name", "DOB", "Phone", "GP Surgery"}, 0
+        );
 
+        patientTable = new JTable(patientTableModel);
         loadPatients();
 
-        JButton addBtn = new JButton("Add Patient");
-        JButton delBtn = new JButton("Delete Patient");
+        JButton add = new JButton("Add Patient");
+        JButton delete = new JButton("Delete Patient");
 
-        addBtn.addActionListener(e -> addPatient());
-        delBtn.addActionListener(e -> deletePatient());
+        add.addActionListener(e -> addPatient());
+        delete.addActionListener(e -> deletePatient());
 
-        JPanel panel = new JPanel(new BorderLayout());
+        JPanel bottom = new JPanel();
+        bottom.add(add);
+        bottom.add(delete);
+
         panel.add(new JScrollPane(patientTable), BorderLayout.CENTER);
-        panel.add(buttonRow(addBtn, delBtn), BorderLayout.SOUTH);
-
+        panel.add(bottom, BorderLayout.SOUTH);
         return panel;
     }
 
-    /**
-     * Loads patient data from CSV into the table.
-     */
     private void loadPatients() {
         try {
             patientRepository.load("data/patients.csv");
-            patientModel.setRowCount(0);
+            patientTableModel.setRowCount(0);
 
             for (Patient p : patientRepository.getAll()) {
-                patientModel.addRow(new Object[]{
+                patientTableModel.addRow(new Object[]{
                         p.getNhsNumber(),
                         p.getFirstName(),
                         p.getLastName(),
@@ -144,9 +128,6 @@ public class MainFrame extends JFrame {
         }
     }
 
-    /**
-     * Adds a new patient using user input dialogs.
-     */
     private void addPatient() {
         try {
             Patient p = new Patient(
@@ -154,28 +135,22 @@ public class MainFrame extends JFrame {
                     input("First Name"),
                     input("Last Name"),
                     input("Date of Birth"),
-                    input("Phone Number"),
+                    input("Phone"),
                     input("GP Surgery")
             );
-
             patientRepository.addPatient(p);
             loadPatients();
-
         } catch (Exception e) {
             showError(e);
         }
     }
 
-    /**
-     * Deletes the selected patient.
-     */
     private void deletePatient() {
         int row = patientTable.getSelectedRow();
         if (row == -1) return;
 
         try {
-            String nhs = patientModel.getValueAt(row, 0).toString();
-            patientRepository.deletePatient(nhs);
+            patientRepository.deletePatient(patientTableModel.getValueAt(row, 0).toString());
             loadPatients();
         } catch (Exception e) {
             showError(e);
@@ -188,39 +163,30 @@ public class MainFrame extends JFrame {
 
     private JPanel createClinicianPanel() {
 
-        String[] columns = {
-                "Clinician ID", "Name", "Role",
-                "Specialty", "Workplace"
-        };
+        JPanel panel = new JPanel(new BorderLayout());
 
-        clinicianModel = new DefaultTableModel(columns, 0);
-        clinicianTable = new JTable(clinicianModel);
+        clinicianTableModel = new DefaultTableModel(
+                new String[]{"ID", "Name", "Role", "Specialty", "Workplace"}, 0
+        );
 
+        clinicianTable = new JTable(clinicianTableModel);
         loadClinicians();
 
-        JButton addBtn = new JButton("Add Clinician");
-        JButton delBtn = new JButton("Delete Clinician");
+        JButton add = new JButton("Add Clinician");
+        add.addActionListener(e -> addClinician());
 
-        addBtn.addActionListener(e -> addClinician());
-        delBtn.addActionListener(e -> deleteClinician());
-
-        JPanel panel = new JPanel(new BorderLayout());
         panel.add(new JScrollPane(clinicianTable), BorderLayout.CENTER);
-        panel.add(buttonRow(addBtn, delBtn), BorderLayout.SOUTH);
-
+        panel.add(add, BorderLayout.SOUTH);
         return panel;
     }
 
-    /**
-     * Loads clinicians from CSV.
-     */
     private void loadClinicians() {
         try {
             clinicianRepository.load("data/clinicians.csv");
-            clinicianModel.setRowCount(0);
+            clinicianTableModel.setRowCount(0);
 
             for (Clinician c : clinicianRepository.getAll()) {
-                clinicianModel.addRow(new Object[]{
+                clinicianTableModel.addRow(new Object[]{
                         c.getClinicianId(),
                         c.getName(),
                         c.getRole(),
@@ -233,9 +199,6 @@ public class MainFrame extends JFrame {
         }
     }
 
-    /**
-     * Adds a clinician.
-     */
     private void addClinician() {
         try {
             Clinician c = new Clinician(
@@ -245,25 +208,7 @@ public class MainFrame extends JFrame {
                     input("Specialty"),
                     input("Workplace")
             );
-
             clinicianRepository.add(c);
-            loadClinicians();
-
-        } catch (Exception e) {
-            showError(e);
-        }
-    }
-
-    /**
-     * Deletes selected clinician.
-     */
-    private void deleteClinician() {
-        int row = clinicianTable.getSelectedRow();
-        if (row == -1) return;
-
-        try {
-            String id = clinicianModel.getValueAt(row, 0).toString();
-            clinicianRepository.delete(id);
             loadClinicians();
         } catch (Exception e) {
             showError(e);
@@ -276,42 +221,33 @@ public class MainFrame extends JFrame {
 
     private JPanel createPrescriptionPanel() {
 
-        String[] columns = {
-                "Prescription ID", "Patient NHS",
-                "Clinician", "Medication",
-                "Dosage", "Pharmacy", "Status"
-        };
+        JPanel panel = new JPanel(new BorderLayout());
 
-        prescriptionModel = new DefaultTableModel(columns, 0);
-        prescriptionTable = new JTable(prescriptionModel);
+        prescriptionTableModel = new DefaultTableModel(
+                new String[]{"ID", "Patient NHS", "Clinician", "Medication", "Dosage", "Pharmacy", "Status"}, 0
+        );
 
+        prescriptionTable = new JTable(prescriptionTableModel);
         loadPrescriptions();
 
-        JButton addBtn = new JButton("Add Prescription");
-        addBtn.addActionListener(e -> addPrescription());
+        JButton add = new JButton("Add Prescription");
+        add.addActionListener(e -> addPrescription());
 
-        JPanel panel = new JPanel(new BorderLayout());
         panel.add(new JScrollPane(prescriptionTable), BorderLayout.CENTER);
-        panel.add(buttonRow(addBtn), BorderLayout.SOUTH);
-
+        panel.add(add, BorderLayout.SOUTH);
         return panel;
     }
 
-    /**
-     * Loads prescriptions and resolves clinician IDs to names.
-     */
     private void loadPrescriptions() {
         try {
             prescriptionRepository.load("data/prescriptions.csv");
-            prescriptionModel.setRowCount(0);
+            prescriptionTableModel.setRowCount(0);
 
             for (Prescription p : prescriptionRepository.getAll()) {
-                Clinician c = clinicianRepository.findById(p.getClinicianId());
-
-                prescriptionModel.addRow(new Object[]{
+                prescriptionTableModel.addRow(new Object[]{
                         p.getPrescriptionId(),
                         p.getPatientNhsNumber(),
-                        c != null ? c.getName() : p.getClinicianId(),
+                        p.getClinicianId(),
                         p.getMedication(),
                         p.getDosage(),
                         p.getPharmacy(),
@@ -323,9 +259,6 @@ public class MainFrame extends JFrame {
         }
     }
 
-    /**
-     * Adds a prescription and persists it.
-     */
     private void addPrescription() {
         try {
             Prescription p = new Prescription(
@@ -337,60 +270,64 @@ public class MainFrame extends JFrame {
                     input("Pharmacy"),
                     input("Status")
             );
-
             prescriptionRepository.addPrescription(p);
             loadPrescriptions();
-
         } catch (Exception e) {
             showError(e);
         }
     }
 
     /* =====================================================
-       REFERRALS TAB (SINGLETON)
+       REFERRALS TAB (FULL CSV SUPPORT)
        ===================================================== */
 
     private JPanel createReferralPanel() {
 
-        String[] columns = {
-                "Referral ID", "Patient NHS",
-                "Referring Clinician",
-                "From Facility", "To Facility",
-                "Urgency", "Date"
-        };
+        JPanel panel = new JPanel(new BorderLayout());
 
-        referralModel = new DefaultTableModel(columns, 0);
-        referralTable = new JTable(referralModel);
+        referralTableModel = new DefaultTableModel(
+                new String[]{
+                        "Referral ID",
+                        "Patient NHS",
+                        "Referring Clinician",
+                        "From Facility",
+                        "To Facility",
+                        "Urgency",
+                        "Status",
+                        "Date",
+                        "Reason",
+                        "Clinical Summary"
+                }, 0
+        );
 
+        referralTable = new JTable(referralTableModel);
         loadReferrals();
 
-        JButton addBtn = new JButton("Create Referral");
-        addBtn.addActionListener(e -> createReferral());
+        JButton add = new JButton("Create Referral");
+        add.addActionListener(e -> createReferral());
 
-        JPanel panel = new JPanel(new BorderLayout());
         panel.add(new JScrollPane(referralTable), BorderLayout.CENTER);
-        panel.add(buttonRow(addBtn), BorderLayout.SOUTH);
-
+        panel.add(add, BorderLayout.SOUTH);
         return panel;
     }
 
-    /**
-     * Loads referrals from CSV.
-     */
     private void loadReferrals() {
         try {
             referralRepository.load("data/referrals.csv");
-            referralModel.setRowCount(0);
+            referralTableModel.setRowCount(0);
 
             for (Referral r : referralRepository.getAll()) {
-                referralModel.addRow(new Object[]{
+                referralTableModel.addRow(new Object[]{
                         r.getReferralId(),
                         r.getPatientNhsNumber(),
                         r.getReferringClinicianId(),
                         r.getFromFacilityId(),
                         r.getToFacilityId(),
                         r.getUrgencyLevel(),
-                        r.getReferralDate()
+                        r.getStatus(),
+                        r.getReferralDate(),
+                        r.getReferralReason(),
+                        r.getClinicalSummary()
                 });
             }
         } catch (Exception e) {
@@ -398,9 +335,6 @@ public class MainFrame extends JFrame {
         }
     }
 
-    /**
-     * Creates a referral and processes it using Singleton ReferralManager.
-     */
     private void createReferral() {
         try {
             Referral r = new Referral(
@@ -409,16 +343,19 @@ public class MainFrame extends JFrame {
                     input("Referring Clinician ID"),
                     input("From Facility"),
                     input("To Facility"),
+                    input("Referral Reason"),
                     input("Clinical Summary"),
-                    input("Urgency Level"),
+                    input("Requested Investigations"),
+                    input("Urgency"),
+                    "New",
+                    "",
                     java.time.LocalDate.now().toString()
             );
 
-            // Singleton pattern usage (rubric requirement)
+            // SINGLETON usage (rubric)
             ReferralManager.getInstance().processReferral(r);
 
             loadReferrals();
-
         } catch (Exception e) {
             showError(e);
         }
@@ -428,31 +365,11 @@ public class MainFrame extends JFrame {
        UTILITY METHODS
        ===================================================== */
 
-    /**
-     * Creates a row of buttons.
-     */
-    private JPanel buttonRow(JButton... buttons) {
-        JPanel panel = new JPanel();
-        for (JButton b : buttons) panel.add(b);
-        return panel;
-    }
-
-    /**
-     * Shows an input dialog.
-     */
     private String input(String label) {
         return JOptionPane.showInputDialog(this, label);
     }
 
-    /**
-     * Centralised error handling.
-     */
     private void showError(Exception e) {
-        JOptionPane.showMessageDialog(
-                this,
-                e.getMessage(),
-                "Error",
-                JOptionPane.ERROR_MESSAGE
-        );
+        JOptionPane.showMessageDialog(this, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
     }
 }

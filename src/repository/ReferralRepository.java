@@ -41,16 +41,21 @@ public class ReferralRepository {
                 // Safety check (CSV has many columns)
                 if (cols.length < 11) continue;
 
-                Referral referral = new Referral(
-                        cols[0].trim(),  // referral_id
-                        cols[1].trim(),  // patient_id
-                        cols[2].trim(),  // referring_clinician_id
-                        cols[4].trim(),  // referring_facility_id
-                        cols[5].trim(),  // referred_to_facility_id
-                        cols[9].trim(),  // clinical_summary
-                        cols[7].trim(),  // urgency_level
-                        cols[6].trim()   // referral_date
-                );
+        Referral referral = new Referral(
+            cols[0].trim(),  // referral_id
+            cols[1].trim(),  // patient_id
+            cols[2].trim(),  // referring_clinician_id
+            cols[4].trim(),  // referring_facility_id
+            cols[5].trim(),  // referred_to_facility_id
+            cols[9].trim(),  // clinical_summary
+            cols[7].trim(),  // urgency_level
+            cols[6].trim(),  // referral_date
+            cols[8].trim(),  // referral_reason
+            cols[10].trim(), // requested_investigations
+            cols[11].trim(), // status
+            cols[13].trim()  // notes
+);
+
 
                 referrals.add(referral);
             }
