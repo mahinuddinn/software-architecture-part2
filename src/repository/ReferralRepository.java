@@ -18,6 +18,40 @@ import java.util.List;
  */
 public class ReferralRepository {
 
+    /**
+ * Updates an existing referral (matched by referralId).
+ */
+public void updateReferral(Referral updated) throws IOException {
+
+    for (int i = 0; i < referrals.size(); i++) {
+        if (referrals.get(i).getReferralId()
+                .equalsIgnoreCase(updated.getReferralId())) {
+
+            referrals.set(i, updated);
+            saveToCsv();
+            return;
+        }
+    }
+
+    throw new IllegalArgumentException("Referral not found.");
+}
+
+/**
+ * Deletes a referral by ID.
+ */
+public void deleteReferral(String referralId) throws IOException {
+
+    boolean removed = referrals.removeIf(r ->
+            r.getReferralId().equalsIgnoreCase(referralId));
+
+    if (!removed) {
+        throw new IllegalArgumentException("Referral not found.");
+    }
+
+    saveToCsv();
+}
+
+
     /** In-memory referral list */
     private final List<Referral> referrals = new ArrayList<>();
 
@@ -55,6 +89,7 @@ public class ReferralRepository {
             cols[11].trim(), // status
             cols[13].trim()  // notes
 );
+
 
 
                 referrals.add(referral);
