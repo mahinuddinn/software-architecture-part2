@@ -2,81 +2,66 @@ package repository;
 
 import model.Clinician;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * ClinicianRepository
  * -------------------
- * Handles loading, storing, updating, and persisting Clinician records.
+ * Handles loading, storing, editing, and deleting clinicians.
  *
- * MODEL layer in MVC.
- *
- * CSV format:
- * clinicianId,name,role,specialty,workplace
+ * MODEL layer (MVC).
  */
 public class ClinicianRepository {
 
-    /** In-memory list of clinicians */
+    /** In-memory list */
     private final List<Clinician> clinicians = new ArrayList<>();
 
-    /** CSV file path (set when load() is called) */
+    /** CSV source path */
     private String sourceFilePath;
 
-    /**
-     * Loads clinicians from CSV file.
-     *
-     * @param filePath path to clinicians.csv
-     */
+    /* =====================================================
+       LOAD
+       ===================================================== */
+
     public void load(String filePath) throws IOException {
 
+        this.sourceFilePath = filePath;
         clinicians.clear();
-        sourceFilePath = filePath;
 
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
 
-            // Skip CSV header
-            br.readLine();
-
+            br.readLine(); // skip header
             String line;
+
             while ((line = br.readLine()) != null) {
 
                 String[] cols = line.split(",", -1);
                 if (cols.length < 5) continue;
 
-                Clinician clinician = new Clinician(
-                        cols[0].trim(), // clinicianId
-                        cols[1].trim(), // name
-                        cols[2].trim(), // role
-                        cols[3].trim(), // specialty
-                        cols[4].trim()  // workplace
+                Clinician c = new Clinician(
+                        cols[0].trim(),
+                        cols[1].trim(),
+                        cols[2].trim(),
+                        cols[3].trim(),
+                        cols[4].trim()
                 );
 
-                clinicians.add(clinician);
+                clinicians.add(c);
             }
         }
     }
 
-    /**
-     * Returns a copy of all clinicians.
-     */
+    /* =====================================================
+       READ
+       ===================================================== */
+
     public List<Clinician> getAll() {
         return new ArrayList<>(clinicians);
     }
 
-    /**
-     * Finds a clinician by ID.
-     *
-     * @param clinicianId clinician identifier
-     * @return Clinician if found, otherwise null
-     */
     public Clinician findById(String clinicianId) {
-
         for (Clinician c : clinicians) {
             if (c.getClinicianId().equalsIgnoreCase(clinicianId)) {
                 return c;
@@ -85,61 +70,67 @@ public class ClinicianRepository {
         return null;
     }
 
-    /**
-     * Adds a new clinician and saves to CSV.
-     */
+    /* =====================================================
+       CREATE
+       ===================================================== */
+
     public void add(Clinician clinician) throws IOException {
 
         if (clinician == null || clinician.getClinicianId().isBlank()) {
             throw new IllegalArgumentException("Clinician ID is required.");
         }
 
+        if (findById(clinician.getClinicianId()) != null) {
+            throw new IllegalArgumentException("Clinician ID already exists.");
+        }
+
         clinicians.add(clinician);
         saveToCsv();
     }
 
-    /**
-     * Updates an existing clinician (matched by ID).
-     */
-    public void update(Clinician updatedClinician) throws IOException {
+    /* =====================================================
+       UPDATE
+       ===================================================== */
+
+    public void update(Clinician updated) throws IOException {
 
         for (int i = 0; i < clinicians.size(); i++) {
             if (clinicians.get(i).getClinicianId()
-                    .equalsIgnoreCase(updatedClinician.getClinicianId())) {
+                    .equalsIgnoreCase(updated.getClinicianId())) {
 
-                clinicians.set(i, updatedClinician);
+                clinicians.set(i, updated);
                 saveToCsv();
                 return;
             }
         }
 
-        throw new IllegalArgumentException("Clinician not found: " +
-                updatedClinician.getClinicianId());
+        throw new IllegalArgumentException("Clinician not found.");
     }
 
-    /**
-     * Deletes a clinician by ID.
-     */
+    /* =====================================================
+       DELETE
+       ===================================================== */
+
     public void delete(String clinicianId) throws IOException {
 
-        boolean removed = clinicians.removeIf(
-                c -> c.getClinicianId().equalsIgnoreCase(clinicianId)
-        );
+        boolean removed = clinicians.removeIf(c ->
+                c.getClinicianId().equalsIgnoreCase(clinicianId));
 
         if (!removed) {
-            throw new IllegalArgumentException("Clinician not found: " + clinicianId);
+            throw new IllegalArgumentException("Clinician not found.");
         }
 
         saveToCsv();
     }
 
-    /**
-     * Writes clinicians back to CSV.
-     */
+    /* =====================================================
+       CSV SAVE
+       ===================================================== */
+
     private void saveToCsv() throws IOException {
 
         if (sourceFilePath == null) {
-            throw new IllegalStateException("CSV file path not set. Call load() first.");
+            throw new IllegalStateException("CSV path not set. Call load() first.");
         }
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(sourceFilePath))) {
@@ -160,9 +151,6 @@ public class ClinicianRepository {
         }
     }
 
-    /**
-     * Prevents commas from breaking CSV structure.
-     */
     private String safe(String value) {
         return value == null ? "" : value.replace(",", " ");
     }

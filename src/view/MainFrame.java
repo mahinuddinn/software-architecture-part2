@@ -165,62 +165,123 @@ public class MainFrame extends JFrame {
     }
 
     /* =====================================================
-       CLINICIAN TAB (ADD ONLY)
-       ===================================================== */
+   CLINICIANS TAB (ADD / EDIT / DELETE)
+   ===================================================== */
 
-    private JPanel createClinicianPanel() {
+private JPanel createClinicianPanel() {
 
-        JPanel panel = new JPanel(new BorderLayout());
+    JPanel panel = new JPanel(new BorderLayout());
 
-        clinicianTableModel = new DefaultTableModel(
-                new String[]{"ID", "Name", "Role", "Specialty", "Workplace"}, 0
+    clinicianTableModel = new DefaultTableModel(
+            new String[]{"ID", "Name", "Role", "Specialty", "Workplace"}, 0
+    );
+    clinicianTable = new JTable(clinicianTableModel);
+
+    loadClinicians();
+
+    JButton add = new JButton("Add");
+    JButton edit = new JButton("Edit");
+    JButton delete = new JButton("Delete");
+
+    add.addActionListener(e -> addClinician());
+    edit.addActionListener(e -> editClinician());
+    delete.addActionListener(e -> deleteClinician());
+
+    JPanel buttons = new JPanel();
+    buttons.add(add);
+    buttons.add(edit);
+    buttons.add(delete);
+
+    panel.add(new JScrollPane(clinicianTable), BorderLayout.CENTER);
+    panel.add(buttons, BorderLayout.SOUTH);
+
+    return panel;
+}
+
+private void loadClinicians() {
+    try {
+        clinicianRepository.load("data/clinicians.csv");
+        clinicianTableModel.setRowCount(0);
+
+        for (Clinician c : clinicianRepository.getAll()) {
+            clinicianTableModel.addRow(new Object[]{
+                    c.getClinicianId(),
+                    c.getName(),
+                    c.getRole(),
+                    c.getSpecialty(),
+                    c.getWorkplace()
+            });
+        }
+    } catch (Exception e) {
+        showError(e);
+    }
+}
+
+private void addClinician() {
+    try {
+        Clinician c = new Clinician(
+                JOptionPane.showInputDialog(this, "Clinician ID"),
+                JOptionPane.showInputDialog(this, "Full Name"),
+                JOptionPane.showInputDialog(this, "Role"),
+                JOptionPane.showInputDialog(this, "Specialty"),
+                JOptionPane.showInputDialog(this, "Workplace")
         );
-        clinicianTable = new JTable(clinicianTableModel);
 
+        clinicianRepository.add(c);
         loadClinicians();
 
-        JButton add = new JButton("Add Clinician");
-        add.addActionListener(e -> addClinician());
-
-        panel.add(new JScrollPane(clinicianTable), BorderLayout.CENTER);
-        panel.add(add, BorderLayout.SOUTH);
-
-        return panel;
+    } catch (Exception e) {
+        showError(e);
     }
+}
 
-    private void loadClinicians() {
-        try {
-            clinicianRepository.load("data/clinicians.csv");
-            clinicianTableModel.setRowCount(0);
-            for (Clinician c : clinicianRepository.getAll()) {
-                clinicianTableModel.addRow(new Object[]{
-                        c.getClinicianId(),
-                        c.getName(),
-                        c.getRole(),
-                        c.getSpecialty(),
-                        c.getWorkplace()
-                });
-            }
-        } catch (Exception e) {
-            showError(e);
-        }
+private void editClinician() {
+
+    int row = clinicianTable.getSelectedRow();
+    if (row == -1) return;
+
+    try {
+        Clinician updated = new Clinician(
+                clinicianTableModel.getValueAt(row, 0).toString(),
+                JOptionPane.showInputDialog(this, "Name", clinicianTableModel.getValueAt(row, 1)),
+                JOptionPane.showInputDialog(this, "Role", clinicianTableModel.getValueAt(row, 2)),
+                JOptionPane.showInputDialog(this, "Specialty", clinicianTableModel.getValueAt(row, 3)),
+                JOptionPane.showInputDialog(this, "Workplace", clinicianTableModel.getValueAt(row, 4))
+        );
+
+        clinicianRepository.update(updated);
+        loadClinicians();
+
+    } catch (Exception e) {
+        showError(e);
     }
+}
 
-    private void addClinician() {
-        try {
-            Clinician c = new Clinician(
-                    JOptionPane.showInputDialog(this, "Clinician ID"),
-                    JOptionPane.showInputDialog(this, "Name"),
-                    JOptionPane.showInputDialog(this, "Role"),
-                    JOptionPane.showInputDialog(this, "Specialty"),
-                    JOptionPane.showInputDialog(this, "Workplace")
-            );
-            clinicianRepository.add(c);
+private void deleteClinician() {
+
+    int row = clinicianTable.getSelectedRow();
+    if (row == -1) return;
+
+    try {
+        String clinicianId = clinicianTableModel.getValueAt(row, 0).toString();
+
+        int confirm = JOptionPane.showConfirmDialog(
+                this,
+                "Delete clinician " + clinicianId + "?",
+                "Confirm Delete",
+                JOptionPane.YES_NO_OPTION
+        );
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            clinicianRepository.delete(clinicianId);
             loadClinicians();
-        } catch (Exception e) {
-            showError(e);
         }
+
+    } catch (Exception e) {
+        showError(e);
     }
+}
+
 
     /* =====================================================
        PRESCRIPTIONS TAB (ADD / EDIT / DELETE)
