@@ -1,11 +1,11 @@
-nhsNumber,firstName,lastName,dateOfBirth,phoneNumber,registeredGpSurgery
-P001,John,Smith,1985-03-15,1234567890,M
-P002,Emma,Johnson,1990-07-22,2345678901,F
-P003,Robert,Williams,1975-11-08,3456789012,M
-P004,Sarah,Brown,1988-09-14,4567890123,F
-P005,Michael,Davis,1982-12-03,5678901234,M
-P006,Linda,Miller,1978-04-27,6789012345,F
-P007,James,Wilson,1992-01-19,7890123456,M
-P008,Patricia,Moore,1983-06-11,8901234567,F
-P009,Christopher,Taylor,1979-10-05,9012345678,M
-P010,Elizabeth,Anderson,1987-08-30,0123456789,F
+nhsNumber,firstName,lastName,dateOfBirth,phoneNumber,gender, registeredGpSurgery
+P001,John,Smith,1985-03-15,1234567890,M,Conway Medical Centre
+P002,Emma,Johnson,1990-07-22,2345678901,F, Kingsway Health Centre
+P003,Robert,Williams,1975-11-08,3456789012,M, Blenheim Surgery
+P004,Sarah,Brown,1988-09-14,4567890123,F, Watford Gap Medical Practice
+P005,Michael,Davis,1982-12-03,5678901234,M, Bellhouse Medical Centre
+P006,Linda,Miller,1978-04-27,6789012345,F, Bellhouse Medical Centre
+P007,James,Wilson,1992-01-19,7890123456,M, Harpenden Health Clinic
+P008,Patricia,Moore,1983-06-11,8901234567,F, Kingsway Health Centre
+P009,Christopher,Taylor,1979-10-05,9012345678,M, Blenheim Surgery
+P010,Elizabeth,Anderson,1987-08-30,0123456789,F, Conway Medical Centre

@@ -48,50 +48,36 @@ public class PatientRepository {
      * @param filePath path to patients.csv (e.g. "data/patients.csv")
      * @throws IOException if file cannot be read
      */
-    public void load(String filePath) throws IOException {
-        this.sourceFilePath = filePath;
+public void load(String filePath) throws IOException {
 
-        patients.clear();
-        patientByNhs.clear();
+    patients.clear();
 
-        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+    try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
 
-            // Read and ignore the header row
-            String header = br.readLine();
-            if (header == null) {
-                return; // Empty file
-            }
+        String header = br.readLine(); // skip header
+        if (header == null) return;
 
-            String line;
-            while ((line = br.readLine()) != null) {
-                String[] cols = CsvUtil.splitCsvLine(line);
+        String line;
+        while ((line = br.readLine()) != null) {
 
-                /*
-                 * Column order must match patients.csv header:
-                 * 0 = NHS number
-                 * 1 = First name
-                 * 2 = Last name
-                 * 3 = Date of birth
-                 * 4 = Phone number
-                 * 5 = Registered GP surgery
-                 */
-                String nhs = CsvUtil.get(cols, 0);
-                String first = CsvUtil.get(cols, 1);
-                String last = CsvUtil.get(cols, 2);
-                String dob = CsvUtil.get(cols, 3);
-                String phone = CsvUtil.get(cols, 4);
-                String gp = CsvUtil.get(cols, 5);
+            String[] cols = line.split(",", -1);
 
-                // Skip invalid rows
-                if (nhs.isEmpty()) continue;
+            if (cols.length < 7) continue; // must match CSV
 
-                Patient p = new Patient(nhs, first, last, dob, phone, gp);
+            Patient p = new Patient(
+                    cols[0].trim(), // NHS
+                    cols[1].trim(), // First name
+                    cols[2].trim(), // Last name
+                    cols[3].trim(), // DOB
+                    cols[4].trim(), // Phone
+                    cols[5].trim(), // Gender ✅
+                    cols[6].trim()  // GP Surgery ✅
+            );
 
-                patients.add(p);
-                patientByNhs.put(nhs, p);
-            }
+            patients.add(p);
         }
     }
+}
 
     /**
      * Returns a copy of all loaded patients.
@@ -197,7 +183,7 @@ public class PatientRepository {
                         safe(p.getLastName()),
                         safe(p.getDateOfBirth()),
                         safe(p.getPhoneNumber()),
-                        safe(p.getRegisteredGpSurgery())
+                        safe(p.getGender())
                 ));
                 writer.newLine();
             }
