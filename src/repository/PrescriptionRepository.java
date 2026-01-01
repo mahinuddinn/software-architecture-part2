@@ -9,33 +9,34 @@ import java.util.List;
 /**
  * PrescriptionRepository
  * ----------------------
- * Loads, stores, updates and deletes prescriptions.
- * Correctly maps CSV columns to model fields.
+ * MODEL layer class responsible for:
+ *  - Loading prescriptions from prescriptions.csv
+ *  - Storing prescriptions in memory
+ *  - Writing updates back to CSV
+ *
+ * IMPORTANT:
+ *  - This class MUST match Prescription.java exactly
+ *  - Column order MUST match CSV
  */
 public class PrescriptionRepository {
 
     private final List<Prescription> prescriptions = new ArrayList<>();
-    private String sourceFilePath;
 
-    /**
-     * Loads prescriptions from CSV.
-     */
+    /* =====================================================
+       LOAD FROM CSV
+       Expected CSV header:
+       prescriptionId,patientNhsNumber,clinicianId,medication,dosage,pharmacy,collectionStatus
+       ===================================================== */
+
     public void load(String filePath) throws IOException {
-
-        this.sourceFilePath = filePath;
         prescriptions.clear();
 
-        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String line = reader.readLine(); // skip header
 
-            br.readLine(); // skip header
-            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] cols = line.split(",");
 
-            while ((line = br.readLine()) != null) {
-
-                String[] cols = line.split(",", -1);
-                if (cols.length < 7) continue;
-
-                // ✅ EXACT CSV → MODEL MAPPING
                 Prescription p = new Prescription(
                         cols[0].trim(), // prescriptionId
                         cols[1].trim(), // patientNhsNumber
@@ -51,55 +52,56 @@ public class PrescriptionRepository {
         }
     }
 
+    /* =====================================================
+       CRUD OPERATIONS
+       ===================================================== */
+
     public List<Prescription> getAll() {
-        return new ArrayList<>(prescriptions);
+        return prescriptions;
     }
 
-    public void addPrescription(Prescription p) throws IOException {
-        prescriptions.add(p);
-        saveToCsv();
+    public void addPrescription(Prescription prescription) throws IOException {
+        prescriptions.add(prescription);
+        save("data/prescriptions.csv");
     }
 
     public void updatePrescription(Prescription updated) throws IOException {
         for (int i = 0; i < prescriptions.size(); i++) {
             if (prescriptions.get(i).getPrescriptionId()
-                    .equalsIgnoreCase(updated.getPrescriptionId())) {
+                    .equals(updated.getPrescriptionId())) {
                 prescriptions.set(i, updated);
-                saveToCsv();
-                return;
+                break;
             }
         }
-        throw new IllegalArgumentException("Prescription not found.");
+        save("data/prescriptions.csv");
     }
 
-    public void deletePrescription(String id) throws IOException {
-        prescriptions.removeIf(p -> p.getPrescriptionId().equalsIgnoreCase(id));
-        saveToCsv();
+    public void deletePrescription(String prescriptionId) throws IOException {
+        prescriptions.removeIf(p ->
+                p.getPrescriptionId().equals(prescriptionId));
+        save("data/prescriptions.csv");
     }
 
-    private void saveToCsv() throws IOException {
+    /* =====================================================
+       SAVE TO CSV
+       ===================================================== */
 
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(sourceFilePath))) {
+    private void save(String filePath) throws IOException {
+        try (PrintWriter writer = new PrintWriter(new FileWriter(filePath))) {
 
-            bw.write("prescriptionId,patientNhsNumber,clinicianId,medication,dosage,pharmacy,collectionStatus");
-            bw.newLine();
+            writer.println("prescriptionId,patientNhsNumber,clinicianId,medication,dosage,pharmacy,collectionStatus");
 
             for (Prescription p : prescriptions) {
-                bw.write(String.join(",",
-                        safe(p.getPrescriptionId()),
-                        safe(p.getPatientNhsNumber()),
-                        safe(p.getClinicianId()),
-                        safe(p.getMedication()),
-                        safe(p.getDosage()),
-                        safe(p.getPharmacy()),
-                        safe(p.getCollectionStatus())
-                ));
-                bw.newLine();
+                writer.println(
+                        p.getPrescriptionId() + "," +
+                        p.getPatientNhsNumber() + "," +
+                        p.getClinicianId() + "," +
+                        p.getMedication() + "," +
+                        p.getDosage() + "," +
+                        p.getPharmacy() + "," +
+                        p.getCollectionStatus()
+                );
             }
         }
-    }
-
-    private String safe(String v) {
-        return v == null ? "" : v.replace(",", " ");
     }
 }

@@ -3,43 +3,76 @@ package model;
 /**
  * Prescription
  * ------------
- * Represents a medical prescription issued to a patient by a clinician.
+ * Domain model representing a medical prescription.
  *
- * Prescriptions can be exported to a text file to simulate pharmacy processing.
+ * This class belongs to the MODEL layer in the MVC architecture.
+ * Its responsibility is to:
+ *  - Store prescription data
+ *  - Provide getters (and setters if needed)
+ *
+ * IMPORTANT:
+ *  - NO file I/O
+ *  - NO GUI logic
+ *  - NO business rules
+ *
+ * The structure of this class aligns directly with:
+ *  - prescriptions.csv
+ *  - PrescriptionRepository
+ *  - MainFrame (GUI table)
  */
 public class Prescription {
 
-    /** Unique prescription identifier */
+    /* =========================
+       CORE PRESCRIPTION FIELDS
+       ========================= */
+
+    /** Unique identifier for the prescription (e.g. RX001) */
     private String prescriptionId;
 
-    /** Patient NHS number */
+    /** NHS number of the patient receiving the prescription */
     private String patientNhsNumber;
 
-    /** Issuing clinician */
+    /** Clinician ID who issued the prescription */
     private String clinicianId;
 
-    /** Name of medication */
+    /**
+     * Medication name or code.
+     * IMPORTANT:
+     *  - This is called "medication" (NOT medicationName)
+     *  - MainFrame MUST call getMedication()
+     */
     private String medication;
 
-    /** Dosage instructions */
+    /** Dosage instructions (e.g. 20mg, 500mg, 400mcg) */
     private String dosage;
 
-    /** Pharmacy where prescription is collected */
+    /** Pharmacy where prescription is collected (e.g. Boots Pharmacy) */
     private String pharmacy;
 
-    /** Collection status (e.g. Pending, Collected) */
+    /** Collection status (e.g. Pending, Collected, Issued) */
     private String collectionStatus;
 
+    /* =========================
+       CONSTRUCTOR
+       ========================= */
+
     /**
-     * Constructs a Prescription object.
+     * Full constructor.
+     *
+     * This constructor matches:
+     *  - CSV column order
+     *  - Repository creation
+     *  - GUI creation/editing
      */
-    public Prescription(String prescriptionId,
-                        String patientNhsNumber,
-                        String clinicianId,
-                        String medication,
-                        String dosage,
-                        String pharmacy,
-                        String collectionStatus) {
+    public Prescription(
+            String prescriptionId,
+            String patientNhsNumber,
+            String clinicianId,
+            String medication,
+            String dosage,
+            String pharmacy,
+            String collectionStatus
+    ) {
         this.prescriptionId = prescriptionId;
         this.patientNhsNumber = patientNhsNumber;
         this.clinicianId = clinicianId;
@@ -48,6 +81,10 @@ public class Prescription {
         this.pharmacy = pharmacy;
         this.collectionStatus = collectionStatus;
     }
+
+    /* =========================
+       GETTERS
+       ========================= */
 
     public String getPrescriptionId() {
         return prescriptionId;
@@ -61,6 +98,10 @@ public class Prescription {
         return clinicianId;
     }
 
+    /**
+     * Getter used by MainFrame.
+     * DO NOT rename unless you update MainFrame too.
+     */
     public String getMedication() {
         return medication;
     }
@@ -75,5 +116,37 @@ public class Prescription {
 
     public String getCollectionStatus() {
         return collectionStatus;
+    }
+
+    /* =========================
+       SETTERS (OPTIONAL)
+       =========================
+       These are useful for editing prescriptions
+       via the GUI (Edit button).
+     */
+
+    public void setMedication(String medication) {
+        this.medication = medication;
+    }
+
+    public void setDosage(String dosage) {
+        this.dosage = dosage;
+    }
+
+    public void setPharmacy(String pharmacy) {
+        this.pharmacy = pharmacy;
+    }
+
+    public void setCollectionStatus(String collectionStatus) {
+        this.collectionStatus = collectionStatus;
+    }
+
+    /* =========================
+       DEBUG / DISPLAY
+       ========================= */
+
+    @Override
+    public String toString() {
+        return prescriptionId + " | " + medication + " | " + dosage;
     }
 }

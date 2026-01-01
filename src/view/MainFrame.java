@@ -468,6 +468,34 @@ public class MainFrame extends JFrame {
         return panel;
     }
 
+    private void deletePrescription() {
+    int row = prescriptionTable.getSelectedRow();
+    if (row == -1) {
+        JOptionPane.showMessageDialog(this, "Select a prescription first.");
+        return;
+    }
+
+    try {
+        String id = prescriptionTableModel.getValueAt(row, 0).toString();
+
+        int confirm = JOptionPane.showConfirmDialog(
+                this,
+                "Delete prescription " + id + "?",
+                "Confirm Delete",
+                JOptionPane.YES_NO_OPTION
+        );
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            prescriptionRepository.deletePrescription(id);
+            loadPrescriptions();
+        }
+
+    } catch (Exception ex) {
+        showError(ex);
+    }
+}
+
+
     private void loadPrescriptions() {
         try {
             prescriptionRepository.load("data/prescriptions.csv");
@@ -490,110 +518,112 @@ public class MainFrame extends JFrame {
         }
     }
 
-    private void addPrescription() {
-        try {
-            String id = promptRequired("Prescription ID");
-            if (id == null) return;
+private void addPrescription() {
+    try {
+        String id = promptRequired("Prescription ID");
+        if (id == null) return;
 
-            String patientNhs = promptRequired("Patient NHS Number");
-            if (patientNhs == null) return;
+        String patientNhs = promptRequired("Patient NHS Number");
+        if (patientNhs == null) return;
 
-            String clinicianId = promptRequired("Clinician ID");
-            if (clinicianId == null) return;
+        String clinicianId = promptRequired("Clinician ID");
+        if (clinicianId == null) return;
 
-            String med = promptRequired("Medication");
-            if (med == null) return;
+        String medication = promptRequired("Medication");
+        if (medication == null) return;
 
-            String dosage = promptRequired("Dosage");
-            if (dosage == null) return;
+        String dosage = promptRequired("Dosage");
+        if (dosage == null) return;
 
-            String pharmacy = promptRequired("Pharmacy");
-            if (pharmacy == null) return;
+        String pharmacy = promptRequired("Pharmacy");
+        if (pharmacy == null) return;
 
-            String status = promptRequired("Collection Status (e.g., Pending)");
-            if (status == null) return;
+        String status = promptRequired("Collection Status (e.g. Pending)");
+        if (status == null) return;
 
-            Prescription p = new Prescription(id, patientNhs, clinicianId, med, dosage, pharmacy, status);
+        // ✅ CORRECT constructor order
+        Prescription p = new Prescription(
+                id,
+                patientNhs,
+                clinicianId,
+                medication,
+                dosage,
+                pharmacy,
+                status
+        );
 
-            // Repository should: add -> save -> output text file
-            prescriptionRepository.addPrescription(p);
-            loadPrescriptions();
+        prescriptionRepository.addPrescription(p);
+        loadPrescriptions();
 
-            JOptionPane.showMessageDialog(this, "Prescription added successfully.");
+        JOptionPane.showMessageDialog(this, "Prescription added successfully.");
 
-        } catch (Exception ex) {
-            showError(ex);
-        }
+    } catch (Exception ex) {
+        showError(ex);
+    }
+}
+
+
+private void editPrescription() {
+    int row = prescriptionTable.getSelectedRow();
+    if (row == -1) {
+        JOptionPane.showMessageDialog(this, "Select a prescription row first.");
+        return;
     }
 
-    private void editPrescription() {
-        int row = prescriptionTable.getSelectedRow();
-        if (row == -1) {
-            JOptionPane.showMessageDialog(this, "Select a prescription row first.");
-            return;
-        }
+    try {
+        String id = prescriptionTableModel.getValueAt(row, 0).toString();
 
-        try {
-            String id = prescriptionTableModel.getValueAt(row, 0).toString();
+        String patientNhs = promptRequiredDefault(
+                "Patient NHS",
+                prescriptionTableModel.getValueAt(row, 1).toString()
+        );
 
-            String patientNhs = promptRequiredDefault("Patient NHS", prescriptionTableModel.getValueAt(row, 1).toString());
-            if (patientNhs == null) return;
+        String clinicianId = promptRequiredDefault(
+                "Clinician ID",
+                prescriptionTableModel.getValueAt(row, 2).toString()
+        );
 
-            String clinicianId = promptRequiredDefault("Clinician ID", prescriptionTableModel.getValueAt(row, 2).toString());
-            if (clinicianId == null) return;
+        String medication = promptRequiredDefault(
+                "Medication",
+                prescriptionTableModel.getValueAt(row, 3).toString()
+        );
 
-            String med = promptRequiredDefault("Medication", prescriptionTableModel.getValueAt(row, 3).toString());
-            if (med == null) return;
+        String dosage = promptRequiredDefault(
+                "Dosage",
+                prescriptionTableModel.getValueAt(row, 4).toString()
+        );
 
-            String dosage = promptRequiredDefault("Dosage", prescriptionTableModel.getValueAt(row, 4).toString());
-            if (dosage == null) return;
+        String pharmacy = promptRequiredDefault(
+                "Pharmacy",
+                prescriptionTableModel.getValueAt(row, 5).toString()
+        );
 
-            String pharmacy = promptRequiredDefault("Pharmacy", prescriptionTableModel.getValueAt(row, 5).toString());
-            if (pharmacy == null) return;
+        String status = promptRequiredDefault(
+                "Collection Status",
+                prescriptionTableModel.getValueAt(row, 6).toString()
+        );
 
-            String status = promptRequiredDefault("Collection Status", prescriptionTableModel.getValueAt(row, 6).toString());
-            if (status == null) return;
+        // ✅ CORRECT order
+        Prescription updated = new Prescription(
+                id,
+                patientNhs,
+                clinicianId,
+                medication,
+                dosage,
+                pharmacy,
+                status
+        );
 
-            Prescription updated = new Prescription(id, patientNhs, clinicianId, med, dosage, pharmacy, status);
+        prescriptionRepository.updatePrescription(updated);
+        loadPrescriptions();
 
-            prescriptionRepository.updatePrescription(updated);
-            loadPrescriptions();
+        JOptionPane.showMessageDialog(this, "Prescription updated successfully.");
 
-            JOptionPane.showMessageDialog(this, "Prescription updated successfully.");
-
-        } catch (Exception ex) {
-            showError(ex);
-        }
+    } catch (Exception ex) {
+        showError(ex);
     }
+}
 
-    private void deletePrescription() {
-        int row = prescriptionTable.getSelectedRow();
-        if (row == -1) {
-            JOptionPane.showMessageDialog(this, "Select a prescription row first.");
-            return;
-        }
-
-        try {
-            String id = prescriptionTableModel.getValueAt(row, 0).toString();
-
-            int confirm = JOptionPane.showConfirmDialog(
-                    this,
-                    "Delete prescription: " + id + "?",
-                    "Confirm Delete",
-                    JOptionPane.YES_NO_OPTION
-            );
-
-            if (confirm != JOptionPane.YES_OPTION) return;
-
-            prescriptionRepository.deletePrescription(id);
-            loadPrescriptions();
-
-            JOptionPane.showMessageDialog(this, "Prescription deleted successfully.");
-
-        } catch (Exception ex) {
-            showError(ex);
-        }
-    }
 
     /* =========================================================
        REFERRAL TAB (CSV LOAD + SINGLETON OUTPUT + CRUD)

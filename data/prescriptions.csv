@@ -1,13 +1,13 @@
 prescriptionId,patientNhsNumber,clinicianId,medication,dosage,pharmacy,collectionStatus
-RX001,P001,C001,A001,2025-09-20,Simvastatin,20mg
-RX002,P002,C009,A002,2025-09-20,Paracetamol,500mg
-RX003,P003,C003,A003,2025-09-21,Ramipril,5mg
-RX004,P004,C002,A004,2025-09-22,GTN Spray,400mcg
-RX005,P006,C004,A006,2025-09-23,Metformin,500mg
-RX006,P008,C010,A008,2025-09-26,Folic Acid,5mg
-RX007,P010,C002,A010,2025-09-28,Insulin Glargine,100units/ml
-RX008,P001,C001,,2025-09-15,Ibuprofen,400mg
-RX009,P003,C003,,2025-08-20,Amlodipine,5mg
-RX010,P005,C005,A005,2025-09-25,Atorvastatin,40mg
+RX001,P001,C001,Simvastatin,20mg,Boots Pharmacy,Pending
+RX002,P002,C009,Paracetamol,500mg,Boots Pharmacy,Collected
+RX003,P003,C003,Ramipril,5mg,Hospital Pharmacy,Pending
+RX004,P004,C002,GTN Spray,400mcg,Boots Pharmacy,Collected
+RX005,P006,C004,Metformin,500mg,Boots Pharmacy,Pending
+RX006,P008,C010,Folic Acid,5mg,Boots Pharmacy,Collected
+RX007,P010,C002,Insulin Glargine,100units/ml,Hospital Pharmacy,Pending
+RX008,P001,C001,Ibuprofen,400mg,Boots Pharmacy,Collected
+RX009,P003,C003,Amlodipine,5mg,Boots Pharmacy,Pending
+RX010,P005,C005,Atorvastatin,40mg,Boots Pharmacy,Collected
 RX999,9999999999,CL001,Amoxicillin,500mg,Boots Pharmacy,Pending
 RX_TEST_001,9999999999,CL001,Paracetamol,500mg,Boots,Pending
