@@ -283,7 +283,7 @@ public class MainFrame extends JFrame {
         JPanel panel = new JPanel(new BorderLayout());
 
         clinicianTableModel = new DefaultTableModel(
-                new String[]{"Clinician ID", "Name", "Role", "Specialty", "Workplace"}, 0
+                new String[]{"Clinician ID", "Name", "Role", "Specialty", "Staff Code"}, 0
         );
 
         clinicianTable = new JTable(clinicianTableModel);

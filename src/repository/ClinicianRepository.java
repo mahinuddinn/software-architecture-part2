@@ -25,33 +25,45 @@ public class ClinicianRepository {
        LOAD
        ===================================================== */
 
-    public void load(String filePath) throws IOException {
+public void load(String filePath) throws IOException {
 
-        this.sourceFilePath = filePath;
-        clinicians.clear();
+    this.sourceFilePath = filePath;
+    clinicians.clear();
 
-        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+    try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
 
-            br.readLine(); // skip header
-            String line;
+        // Skip header
+        br.readLine();
 
-            while ((line = br.readLine()) != null) {
+        String line;
+        while ((line = br.readLine()) != null) {
 
-                String[] cols = line.split(",", -1);
-                if (cols.length < 5) continue;
+            String[] cols = line.split(",", -1);
+            if (cols.length < 6) continue;
 
-                Clinician c = new Clinician(
-                        cols[0].trim(),
-                        cols[1].trim(),
-                        cols[2].trim(),
-                        cols[3].trim(),
-                        cols[4].trim()
-                );
+            // CSV structure:
+            // 0 = clinicianId
+            // 1 = firstName
+            // 2 = lastName
+            // 3 = role
+            // 4 = specialty
+            // 5 = workplace
 
-                clinicians.add(c);
-            }
+            String fullName = cols[1].trim() + " " + cols[2].trim();
+
+            Clinician clinician = new Clinician(
+                    cols[0].trim(),      // clinicianId
+                    fullName,            // name (combined)
+                    cols[3].trim(),      // role
+                    cols[4].trim(),      // specialty
+                    cols[5].trim()       // workplace
+            );
+
+            clinicians.add(clinician);
         }
     }
+}
+
 
     /* =====================================================
        READ
