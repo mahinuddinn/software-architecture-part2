@@ -37,43 +37,43 @@ public class ReferralRepository {
     /**
      * Loads referrals from CSV into memory.
      */
-    public void load(String filePath) throws IOException {
+public void load(String filePath) throws IOException {
 
-        this.sourceFilePath = filePath;
-        referrals.clear();
+    referrals.clear();
 
-        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+    try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
 
-            String header = br.readLine(); // skip header
-            if (header == null) return;
+        String header = br.readLine(); // skip header
+        if (header == null) return;
 
-            String line;
-            while ((line = br.readLine()) != null) {
+        String line;
+        while ((line = br.readLine()) != null) {
 
-                String[] cols = line.split(",", -1);
+            String[] cols = line.split(",", -1);
 
-                // CSV has many columns — ensure minimum
-                if (cols.length < 14) continue;
+            // Must have at least 12 columns
+            if (cols.length < 12) continue;
 
-                Referral referral = new Referral(
-                        cols[0].trim(),  // referral_id
-                        cols[1].trim(),  // patient_id
-                        cols[2].trim(),  // referring_clinician_id
-                        cols[4].trim(),  // referring_facility_id
-                        cols[5].trim(),  // referred_to_facility_id
-                        cols[9].trim(),  // clinical_summary
-                        cols[7].trim(),  // urgency_level
-                        cols[6].trim(),  // referral_date
-                        cols[8].trim(),  // referral_reason
-                        cols[10].trim(), // requested_investigations
-                        cols[11].trim(), // status
-                        cols[13].trim()  // notes
-                );
+            Referral referral = new Referral(
+                    cols[0].trim(),  // referralId
+                    cols[1].trim(),  // patientId
+                    cols[2].trim(),  // referringClinicianId
+                    cols[3].trim(),  // fromFacilityId
+                    cols[4].trim(),  // toFacilityId
+                    cols[8].trim(),  // clinicalSummary
+                    cols[6].trim(),  // urgency
+                    cols[5].trim(),  // referralDate
+                    cols[7].trim(),  // referralReason
+                    cols[9].trim(),  // investigations
+                    cols[10].trim(), // status
+                    cols[11].trim()  // notes
+            );
 
-                referrals.add(referral);
-            }
+            referrals.add(referral);
         }
     }
+}
+
 
     /* =====================================================
        ACCESS
