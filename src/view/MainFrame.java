@@ -5,6 +5,7 @@ import model.Clinician;
 import model.Prescription;
 import model.Referral;
 import model.Staff;
+import model.Facility;
 
 import repository.PatientRepository;
 import repository.ClinicianRepository;
@@ -12,6 +13,7 @@ import repository.PrescriptionRepository;
 import repository.ReferralRepository;
 import repository.ReferralManager;
 import repository.StaffRepository;
+import repository.FacilityRepository;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -50,6 +52,7 @@ public class MainFrame extends JFrame {
     private final PrescriptionRepository prescriptionRepository;
     private final ReferralRepository referralRepository;
     private final StaffRepository staffRepository;
+    private final FacilityRepository facilityRepository;
 
     /* =========================================================
        PATIENT TAB - TABLE + MODEL
@@ -86,6 +89,12 @@ public class MainFrame extends JFrame {
     private JTable staffTable;
     private DefaultTableModel staffTableModel;
 
+     /* =========================================================
+       FACILITY TAB - TABLE + MODEL
+       ========================================================= */
+    private JTable facilityTable;
+    private DefaultTableModel facilityTableModel;
+
     /**
      * Constructs the main application window.
      * - Initialise repositories
@@ -108,6 +117,7 @@ public class MainFrame extends JFrame {
         prescriptionRepository = new PrescriptionRepository();
         referralRepository = new ReferralRepository();
         staffRepository = new StaffRepository();
+        facilityRepository = new FacilityRepository();
 
         // ---------- Build tabbed UI ----------
         // Each tab is created by a dedicated method for clarity.
@@ -117,6 +127,7 @@ public class MainFrame extends JFrame {
         tabs.addTab("Prescriptions", createPrescriptionPanel());
         tabs.addTab("Referrals", createReferralPanel());
         tabs.addTab("Staff", createStaffPanel());
+        tabs.addTab("Facilities", createFacilityPanel());
 
         add(tabs, BorderLayout.CENTER);
     }
@@ -1018,6 +1029,113 @@ private void editPrescription() {
             showError(ex);
         }
     }
+
+    /* =========================================================
+   FACILITIES TAB (ADD / EDIT / DELETE)
+   ========================================================= */
+
+private JPanel createFacilityPanel() {
+
+    JPanel panel = new JPanel(new BorderLayout());
+
+    facilityTableModel = new DefaultTableModel(
+            new String[]{"Facility ID", "Name", "Type", "Location"}, 0
+    );
+    facilityTable = new JTable(facilityTableModel);
+
+    loadFacilities();
+
+    JButton add = new JButton("Add");
+    JButton edit = new JButton("Edit");
+    JButton delete = new JButton("Delete");
+
+    add.addActionListener(e -> addFacility());
+    edit.addActionListener(e -> editFacility());
+    delete.addActionListener(e -> deleteFacility());
+
+    JPanel buttons = new JPanel();
+    buttons.add(add);
+    buttons.add(edit);
+    buttons.add(delete);
+
+    panel.add(new JScrollPane(facilityTable), BorderLayout.CENTER);
+    panel.add(buttons, BorderLayout.SOUTH);
+
+    return panel;
+}
+
+private void loadFacilities() {
+    try {
+        facilityRepository.load("data/facilities.csv");
+        facilityTableModel.setRowCount(0);
+
+        for (Facility f : facilityRepository.getAll()) {
+            facilityTableModel.addRow(new Object[]{
+                    f.getFacilityId(),
+                    f.getFacilityName(),
+                    f.getFacilityType(),
+                    f.getLocation()
+            });
+        }
+    } catch (Exception e) {
+        showError(e);
+    }
+}
+
+private void addFacility() {
+    try {
+        Facility f = new Facility(
+                JOptionPane.showInputDialog(this, "Facility ID"),
+                JOptionPane.showInputDialog(this, "Facility Name"),
+                JOptionPane.showInputDialog(this, "Facility Type"),
+                JOptionPane.showInputDialog(this, "Location")
+        );
+
+        facilityRepository.addFacility(f);
+        loadFacilities();
+
+    } catch (Exception e) {
+        showError(e);
+    }
+}
+
+private void editFacility() {
+
+    int row = facilityTable.getSelectedRow();
+    if (row == -1) return;
+
+    try {
+        Facility updated = new Facility(
+                facilityTableModel.getValueAt(row, 0).toString(),
+                JOptionPane.showInputDialog(this, "Facility Name", facilityTableModel.getValueAt(row, 1)),
+                JOptionPane.showInputDialog(this, "Facility Type", facilityTableModel.getValueAt(row, 2)),
+                JOptionPane.showInputDialog(this, "Location", facilityTableModel.getValueAt(row, 3))
+        );
+
+        facilityRepository.updateFacility(updated);
+        loadFacilities();
+
+    } catch (Exception e) {
+        showError(e);
+    }
+}
+
+private void deleteFacility() {
+
+    int row = facilityTable.getSelectedRow();
+    if (row == -1) return;
+
+    try {
+        facilityRepository.deleteFacility(
+                facilityTableModel.getValueAt(row, 0).toString()
+        );
+        loadFacilities();
+
+    } catch (Exception e) {
+        showError(e);
+    }
+}
+
 
     /* =========================================================
        HELPER METHODS (UI QUALITY / SAFETY)

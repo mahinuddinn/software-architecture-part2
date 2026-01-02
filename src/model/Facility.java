@@ -3,59 +3,65 @@ package model;
 /**
  * Facility
  * --------
- * Represents a healthcare facility such as a GP surgery or hospital.
+ * Domain model representing a healthcare facility.
  *
- * Facilities are referenced by clinicians, referrals, and appointments.
+ * MODEL layer in MVC.
+ * Stores data only — no file I/O, no GUI logic.
  */
 public class Facility {
 
-    /** Unique identifier for the facility */
+    /** Unique facility identifier (e.g. S001, H001) */
     private String facilityId;
 
-    /** Name of the facility */
-    private String name;
+    /** Facility name (e.g. Conway Medical Centre) */
+    private String facilityName;
 
-    /** Type of facility (e.g. GP Surgery, Hospital) */
-    private String type;
+    /** Facility type (GP Surgery, Hospital, Clinic, etc.) */
+    private String facilityType;
 
-    /** Contact details (phone/email) */
-    private String contactDetails;
-
-    /** Maximum capacity of the facility */
-    private int capacity;
+    /** Physical location or area */
+    private String location;
 
     /**
-     * Constructs a Facility object.
+     * Full constructor.
+     * Must match CSV column order and repository usage.
      */
-    public Facility(String facilityId,
-                    String name,
-                    String type,
-                    String contactDetails,
-                    int capacity) {
+    public Facility(String facilityId, String facilityName, String facilityType, String location) {
         this.facilityId = facilityId;
-        this.name = name;
-        this.type = type;
-        this.contactDetails = contactDetails;
-        this.capacity = capacity;
+        this.facilityName = facilityName;
+        this.facilityType = facilityType;
+        this.location = location;
     }
+
+    /* ========== GETTERS ========== */
 
     public String getFacilityId() {
         return facilityId;
     }
 
-    public String getName() {
-        return name;
+    public String getFacilityName() {
+        return facilityName;
     }
 
-    public String getType() {
-        return type;
+    public String getFacilityType() {
+        return facilityType;
     }
 
-    public String getContactDetails() {
-        return contactDetails;
+    public String getLocation() {
+        return location;
     }
 
-    public int getCapacity() {
-        return capacity;
+    /* ========== SETTERS (for Edit) ========== */
+
+    public void setFacilityName(String facilityName) {
+        this.facilityName = facilityName;
+    }
+
+    public void setFacilityType(String facilityType) {
+        this.facilityType = facilityType;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
     }
 }
