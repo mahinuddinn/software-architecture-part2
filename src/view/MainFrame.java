@@ -669,15 +669,18 @@ private void editPrescription() {
 
         loadReferrals();
 
+        JButton viewBtn = new JButton("View");
         JButton createBtn = new JButton("Create Referral (Singleton)");
         JButton editBtn = new JButton("Edit Referral");
         JButton deleteBtn = new JButton("Delete Referral");
 
+        viewBtn.addActionListener(e -> viewReferral());
         createBtn.addActionListener(e -> createReferral());
         editBtn.addActionListener(e -> editReferral());
         deleteBtn.addActionListener(e -> deleteReferral());
 
         JPanel buttons = new JPanel();
+        buttons.add(viewBtn);
         buttons.add(createBtn);
         buttons.add(editBtn);
         buttons.add(deleteBtn);
@@ -714,6 +717,7 @@ private void editPrescription() {
             showError(ex);
         }
     }
+
 
     /**
      * Creates a referral and processes it using the Singleton ReferralManager.
@@ -886,6 +890,76 @@ private void editPrescription() {
             showError(ex);
         }
     }
+
+        /**
+ * Displays all referral details for the selected row in a read-only dialog.
+ * This avoids column truncation and allows viewing the full referral content.
+ */
+/**
+ * Displays all referral details for the selected row
+ * in a readable, scrollable dialog.
+ */
+private void viewReferral() {
+
+    int row = referralTable.getSelectedRow();
+
+    if (row == -1) {
+        JOptionPane.showMessageDialog(
+                this,
+                "Please select a referral first.",
+                "No Selection",
+                JOptionPane.WARNING_MESSAGE
+        );
+        return;
+    }
+
+    StringBuilder details = new StringBuilder();
+
+    details.append("Referral ID: ")
+           .append(referralTableModel.getValueAt(row, 0)).append("\n");
+    details.append("Patient ID: ")
+           .append(referralTableModel.getValueAt(row, 1)).append("\n");
+    details.append("Referring Clinician: ")
+           .append(referralTableModel.getValueAt(row, 2)).append("\n");
+    details.append("From Facility: ")
+           .append(referralTableModel.getValueAt(row, 3)).append("\n");
+    details.append("To Facility: ")
+           .append(referralTableModel.getValueAt(row, 4)).append("\n\n");
+
+    details.append("Referral Date: ")
+           .append(referralTableModel.getValueAt(row, 5)).append("\n");
+    details.append("Urgency: ")
+           .append(referralTableModel.getValueAt(row, 6)).append("\n");
+    details.append("Reason:\n")
+           .append(referralTableModel.getValueAt(row, 7)).append("\n\n");
+
+    details.append("Clinical Summary:\n")
+           .append(referralTableModel.getValueAt(row, 8)).append("\n\n");
+
+    details.append("Investigations:\n")
+           .append(referralTableModel.getValueAt(row, 9)).append("\n\n");
+
+    details.append("Status: ")
+           .append(referralTableModel.getValueAt(row, 10)).append("\n\n");
+
+    details.append("Notes:\n")
+           .append(referralTableModel.getValueAt(row, 11));
+
+    JTextArea textArea = new JTextArea(details.toString(), 20, 60);
+    textArea.setLineWrap(true);
+    textArea.setWrapStyleWord(true);
+    textArea.setEditable(false);
+
+    JScrollPane scrollPane = new JScrollPane(textArea);
+
+    JOptionPane.showMessageDialog(
+            this,
+            scrollPane,
+            "Referral Details",
+            JOptionPane.INFORMATION_MESSAGE
+    );
+}
+
 
     /* =========================================================
        STAFF TAB (ADD / EDIT / DELETE)
