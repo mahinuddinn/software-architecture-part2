@@ -291,39 +291,42 @@ public class MainFrame extends JFrame {
 
     private JPanel createClinicianPanel() {
 
-        JPanel panel = new JPanel(new BorderLayout());
+    JPanel panel = new JPanel(new BorderLayout());
 
-        clinicianTableModel = new DefaultTableModel(
-                new String[]{"Clinician ID", "Name", "Role", "Specialty", "Staff Code"}, 0
-        );
+    clinicianTableModel = new DefaultTableModel(
+            new String[]{"Clinician ID", "Name", "Role", "Specialty", "Staff Code"}, 0
+    );
 
-        clinicianTable = new JTable(clinicianTableModel);
-        clinicianTable.setPreferredScrollableViewportSize(new Dimension(1200, 450));
+    clinicianTable = new JTable(clinicianTableModel);
 
-        loadClinicians();
+    // ✅ LOAD DATA
+    loadClinicians();
 
-        // -------- Buttons --------
-        JButton addBtn = new JButton("Add Clinician");
-        JButton editBtn = new JButton("Edit Clinician");
-        JButton deleteBtn = new JButton("Delete Clinician");
-        JButton viewBtn = new JButton("View Clinician"); // ✅ NEW
+    // -------- Buttons --------
+    JButton addBtn = new JButton("Add Clinician");
+    JButton editBtn = new JButton("Edit Clinician");
+    JButton deleteBtn = new JButton("Delete Clinician");
+    JButton viewBtn = new JButton("View Clinician");
 
-        addBtn.addActionListener(e -> addClinician());
-        editBtn.addActionListener(e -> editClinician());
-        deleteBtn.addActionListener(e -> deleteClinician());
-        viewBtn.addActionListener(e -> viewClinician()); // ✅ NEW
+    addBtn.addActionListener(e -> addClinician());
+    editBtn.addActionListener(e -> editClinician());
+    deleteBtn.addActionListener(e -> deleteClinician());
+    viewBtn.addActionListener(e -> viewClinician());
 
-        JPanel buttons = new JPanel();
-        buttons.add(addBtn);
-        buttons.add(editBtn);
-        buttons.add(deleteBtn);
-        buttons.add(viewBtn); // ✅ MUST be added
+    JPanel buttons = new JPanel();
+    buttons.add(addBtn);
+    buttons.add(editBtn);
+    buttons.add(deleteBtn);
+    buttons.add(viewBtn);
 
-        panel.add(buttons, BorderLayout.SOUTH);
+    // ✅ THIS LINE WAS MISSING
+    panel.add(new JScrollPane(clinicianTable), BorderLayout.CENTER);
 
+    panel.add(buttons, BorderLayout.SOUTH);
 
-        return panel;
-    }
+    return panel;
+}
+
 
     private void loadClinicians() {
         try {
