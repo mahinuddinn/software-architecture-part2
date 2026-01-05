@@ -302,21 +302,25 @@ public class MainFrame extends JFrame {
 
         loadClinicians();
 
+        // -------- Buttons --------
         JButton addBtn = new JButton("Add Clinician");
         JButton editBtn = new JButton("Edit Clinician");
         JButton deleteBtn = new JButton("Delete Clinician");
+        JButton viewBtn = new JButton("View Clinician"); // ✅ NEW
 
         addBtn.addActionListener(e -> addClinician());
         editBtn.addActionListener(e -> editClinician());
         deleteBtn.addActionListener(e -> deleteClinician());
+        viewBtn.addActionListener(e -> viewClinician()); // ✅ NEW
 
         JPanel buttons = new JPanel();
         buttons.add(addBtn);
         buttons.add(editBtn);
         buttons.add(deleteBtn);
+        buttons.add(viewBtn); // ✅ MUST be added
 
-        panel.add(new JScrollPane(clinicianTable), BorderLayout.CENTER);
         panel.add(buttons, BorderLayout.SOUTH);
+
 
         return panel;
     }
@@ -369,6 +373,53 @@ public class MainFrame extends JFrame {
             showError(ex);
         }
     }
+
+    private void viewClinician() {
+
+    int row = clinicianTable.getSelectedRow();
+
+    if (row == -1) {
+        JOptionPane.showMessageDialog(
+                this,
+                "Please select a clinician first.",
+                "No Selection",
+                JOptionPane.WARNING_MESSAGE
+        );
+        return;
+    }
+
+    StringBuilder details = new StringBuilder();
+
+    details.append("Clinician ID: ")
+           .append(clinicianTableModel.getValueAt(row, 0)).append("\n\n");
+
+    details.append("Name:\n")
+           .append(clinicianTableModel.getValueAt(row, 1)).append("\n\n");
+
+    details.append("Role:\n")
+           .append(clinicianTableModel.getValueAt(row, 2)).append("\n\n");
+
+    details.append("Specialty:\n")
+           .append(clinicianTableModel.getValueAt(row, 3)).append("\n\n");
+
+    details.append("Workplace / Staff Code:\n")
+           .append(clinicianTableModel.getValueAt(row, 4));
+
+    JTextArea textArea = new JTextArea(details.toString(), 16, 55);
+    textArea.setLineWrap(true);
+    textArea.setWrapStyleWord(true);
+    textArea.setEditable(false);
+
+    JScrollPane scrollPane = new JScrollPane(textArea);
+
+    JOptionPane.showMessageDialog(
+            this,
+            scrollPane,
+            "Clinician Details",
+            JOptionPane.INFORMATION_MESSAGE
+    );
+}
+
 
     private void editClinician() {
         int row = clinicianTable.getSelectedRow();
@@ -439,45 +490,50 @@ public class MainFrame extends JFrame {
        prescriptionId,patientNhsNumber,clinicianId,medication,dosage,pharmacy,collectionStatus
        ========================================================= */
 
-    private JPanel createPrescriptionPanel() {
+private JPanel createPrescriptionPanel() {
 
-        JPanel panel = new JPanel(new BorderLayout());
+    JPanel panel = new JPanel(new BorderLayout());
 
-        prescriptionTableModel = new DefaultTableModel(
-                new String[]{
-                        "Prescription ID",
-                        "Patient NHS",
-                        "Clinician ID",
-                        "Medication",
-                        "Dosage",
-                        "Pharmacy",
-                        "Collection Status"
-                }, 0
-        );
+    prescriptionTableModel = new DefaultTableModel(
+            new String[]{
+                    "Prescription ID",
+                    "Patient NHS",
+                    "Clinician ID",
+                    "Medication",
+                    "Dosage",
+                    "Pharmacy",
+                    "Collection Status"
+            }, 0
+    );
 
-        prescriptionTable = new JTable(prescriptionTableModel);
-        prescriptionTable.setPreferredScrollableViewportSize(new Dimension(1200, 450));
+    prescriptionTable = new JTable(prescriptionTableModel);
+    prescriptionTable.setRowHeight(22);
 
-        loadPrescriptions();
+    loadPrescriptions();
 
-        JButton addBtn = new JButton("Add Prescription");
-        JButton editBtn = new JButton("Edit Prescription");
-        JButton deleteBtn = new JButton("Delete Prescription");
+    // -------- Buttons --------
+    JButton addBtn = new JButton("Add Prescription");
+    JButton editBtn = new JButton("Edit Prescription");
+    JButton deleteBtn = new JButton("Delete Prescription");
+    JButton viewBtn = new JButton("View Prescription"); // ✅ THIS IS THE BUTTON
 
-        addBtn.addActionListener(e -> addPrescription());
-        editBtn.addActionListener(e -> editPrescription());
-        deleteBtn.addActionListener(e -> deletePrescription());
+    addBtn.addActionListener(e -> addPrescription());
+    editBtn.addActionListener(e -> editPrescription());
+    deleteBtn.addActionListener(e -> deletePrescription());
+    viewBtn.addActionListener(e -> viewPrescription());
 
-        JPanel buttons = new JPanel();
-        buttons.add(addBtn);
-        buttons.add(editBtn);
-        buttons.add(deleteBtn);
+    JPanel buttons = new JPanel();
+    buttons.add(addBtn);
+    buttons.add(editBtn);
+    buttons.add(deleteBtn);
+    buttons.add(viewBtn); // ✅ MUST BE HERE
 
-        panel.add(new JScrollPane(prescriptionTable), BorderLayout.CENTER);
-        panel.add(buttons, BorderLayout.SOUTH);
+    panel.add(new JScrollPane(prescriptionTable), BorderLayout.CENTER);
+    panel.add(buttons, BorderLayout.SOUTH);
 
-        return panel;
-    }
+    return panel;
+}
+
 
     private void deletePrescription() {
     int row = prescriptionTable.getSelectedRow();
@@ -504,6 +560,60 @@ public class MainFrame extends JFrame {
     } catch (Exception ex) {
         showError(ex);
     }
+}
+
+/**
+ * Displays all details of the selected prescription
+ * in a readable, scrollable dialog.
+ */
+private void viewPrescription() {
+
+    int row = prescriptionTable.getSelectedRow();
+
+    if (row == -1) {
+        JOptionPane.showMessageDialog(
+                this,
+                "Please select a prescription first.",
+                "No Selection",
+                JOptionPane.WARNING_MESSAGE
+        );
+        return;
+    }
+
+    StringBuilder details = new StringBuilder();
+
+    details.append("Prescription ID: ")
+           .append(prescriptionTableModel.getValueAt(row, 0)).append("\n");
+    details.append("Patient NHS: ")
+           .append(prescriptionTableModel.getValueAt(row, 1)).append("\n");
+    details.append("Clinician ID: ")
+           .append(prescriptionTableModel.getValueAt(row, 2)).append("\n\n");
+
+    details.append("Medication:\n")
+           .append(prescriptionTableModel.getValueAt(row, 3)).append("\n\n");
+
+    details.append("Dosage:\n")
+           .append(prescriptionTableModel.getValueAt(row, 4)).append("\n\n");
+
+    details.append("Pharmacy:\n")
+           .append(prescriptionTableModel.getValueAt(row, 5)).append("\n\n");
+
+    details.append("Collection Status:\n")
+           .append(prescriptionTableModel.getValueAt(row, 6));
+
+    JTextArea textArea = new JTextArea(details.toString(), 18, 60);
+    textArea.setLineWrap(true);
+    textArea.setWrapStyleWord(true);
+    textArea.setEditable(false);
+
+    JScrollPane scrollPane = new JScrollPane(textArea);
+
+    JOptionPane.showMessageDialog(
+            this,
+            scrollPane,
+            "Prescription Details",
+            JOptionPane.INFORMATION_MESSAGE
+    );
 }
 
 
