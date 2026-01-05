@@ -16,6 +16,14 @@ import java.util.List;
  *
  * GUI expected display:
  * Staff ID | Name (first + last) | Role | Department
+ *
+ * This class belongs to the MODEL layer in MVC.
+ * It performs:
+ *  - CSV loading
+ *  - In-memory storage
+ *  - CSV persistence
+ *
+ * NO GUI logic is allowed here.
  */
 public class StaffRepository {
 
@@ -25,8 +33,13 @@ public class StaffRepository {
     /** Path to the CSV file used for persistence */
     private String sourceFilePath;
 
+    /* =====================================================
+       LOAD
+       ===================================================== */
+
     /**
      * Load staff records from CSV into memory.
+     *
      * @param filePath path to staff.csv
      */
     public void load(String filePath) throws IOException {
@@ -34,18 +47,17 @@ public class StaffRepository {
         staffList.clear();
 
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+
             String header = br.readLine(); // skip header
             if (header == null) return;
 
             String line;
             while ((line = br.readLine()) != null) {
 
-                // Skip completely empty lines (your files sometimes include these)
+                // Skip empty lines
                 if (line.trim().isEmpty()) continue;
 
                 String[] cols = line.split(",", -1);
-
-                // We expect 5 columns: id, first, last, role, dept
                 if (cols.length < 5) continue;
 
                 String staffId = cols[0].trim();
@@ -54,31 +66,50 @@ public class StaffRepository {
                 String role = cols[3].trim();
                 String department = cols[4].trim();
 
-                // GUI "Name" column = firstName + lastName
                 String fullName = (firstName + " " + lastName).trim();
 
-                Staff staff = new Staff(staffId, fullName, role, department);
-                staffList.add(staff);
+                staffList.add(new Staff(staffId, fullName, role, department));
             }
         }
     }
 
+    /* =====================================================
+       READ (VIEW)
+       ===================================================== */
+
     /**
-     * Return all staff as a defensive copy.
+     * Return all staff records (used by GUI table).
      */
     public List<Staff> getAll() {
         return new ArrayList<>(staffList);
     }
 
     /**
+     * Find a staff member by staff ID.
+     * Used by "View Staff" button logic.
+     */
+    public Staff findById(String staffId) {
+        for (Staff s : staffList) {
+            if (s.getStaffId().equalsIgnoreCase(staffId)) {
+                return s;
+            }
+        }
+        return null;
+    }
+
+    /* =====================================================
+       CREATE
+       ===================================================== */
+
+    /**
      * Add new staff record and persist to CSV.
      */
     public void addStaff(Staff staff) throws IOException {
+
         if (staff == null || staff.getStaffId() == null || staff.getStaffId().isBlank()) {
             throw new IllegalArgumentException("Staff ID is required.");
         }
 
-        // Prevent duplicate IDs
         if (findById(staff.getStaffId()) != null) {
             throw new IllegalArgumentException("Staff ID already exists: " + staff.getStaffId());
         }
@@ -87,71 +118,85 @@ public class StaffRepository {
         saveToCsv();
     }
 
+    /* =====================================================
+       UPDATE
+       ===================================================== */
+
     /**
-     * Update existing staff record (matched by staffId) and persist.
+     * Update an existing staff member (matched by staff ID).
      */
-    public void updateStaff(Staff updated) throws IOException {
-        if (updated == null || updated.getStaffId() == null || updated.getStaffId().isBlank()) {
-            throw new IllegalArgumentException("Staff ID is required.");
-        }
+    public void updateStaff(Staff updatedStaff) throws IOException {
+
+        boolean found = false;
 
         for (int i = 0; i < staffList.size(); i++) {
-            if (staffList.get(i).getStaffId().equalsIgnoreCase(updated.getStaffId())) {
-                staffList.set(i, updated);
-                saveToCsv();
-                return;
+            Staff existing = staffList.get(i);
+
+            if (existing.getStaffId()
+                    .equalsIgnoreCase(updatedStaff.getStaffId())) {
+
+                staffList.set(i, updatedStaff);
+                found = true;
+                break;
             }
         }
 
-        throw new IllegalArgumentException("Staff not found: " + updated.getStaffId());
-    }
+        if (!found) {
+            throw new IllegalArgumentException("Staff member not found.");
+        }
 
-    /**
-     * Delete staff by staffId and persist.
-     */
-    public void deleteStaff(String staffId) throws IOException {
-        boolean removed = staffList.removeIf(s -> s.getStaffId().equalsIgnoreCase(staffId));
-        if (!removed) throw new IllegalArgumentException("Staff not found: " + staffId);
         saveToCsv();
     }
 
+    /* =====================================================
+       DELETE
+       ===================================================== */
+
     /**
-     * Find a staff record by ID.
+     * Delete staff by staff ID and persist.
      */
-    public Staff findById(String staffId) {
-        for (Staff s : staffList) {
-            if (s.getStaffId().equalsIgnoreCase(staffId)) return s;
+    public void deleteStaff(String staffId) throws IOException {
+
+        boolean removed = staffList.removeIf(
+                s -> s.getStaffId().equalsIgnoreCase(staffId)
+        );
+
+        if (!removed) {
+            throw new IllegalArgumentException("Staff not found: " + staffId);
         }
-        return null;
+
+        saveToCsv();
     }
+
+    /* =====================================================
+       CSV SAVE
+       ===================================================== */
 
     /**
      * Save current in-memory staff list back to the CSV.
      *
-     * IMPORTANT:
-     * Your Staff model stores fullName, so we split it back into first/last.
-     * If a name only has one word, lastName becomes blank.
+     * Staff model stores fullName, so we split it
+     * back into first + last name.
      */
     private void saveToCsv() throws IOException {
+
         if (sourceFilePath == null) {
             throw new IllegalStateException("CSV file path not set. Call load() first.");
         }
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(sourceFilePath))) {
 
-            // Header must match the real CSV structure
             writer.write("staffId,firstName,lastName,role,department");
             writer.newLine();
 
             for (Staff s : staffList) {
+
                 String[] nameParts = splitName(s.getName());
-                String firstName = nameParts[0];
-                String lastName = nameParts[1];
 
                 writer.write(String.join(",",
                         safe(s.getStaffId()),
-                        safe(firstName),
-                        safe(lastName),
+                        safe(nameParts[0]),
+                        safe(nameParts[1]),
                         safe(s.getRole()),
                         safe(s.getDepartment())
                 ));
@@ -160,23 +205,28 @@ public class StaffRepository {
         }
     }
 
+    /* =====================================================
+       HELPERS
+       ===================================================== */
+
     /**
      * Split a full name into first + last.
-     * - "Michelle Adams" -> ["Michelle", "Adams"]
-     * - "Mary Jane Smith" -> ["Mary Jane", "Smith"] (last word treated as last name)
-     * - "Michelle" -> ["Michelle", ""]
      */
     private String[] splitName(String fullName) {
-        if (fullName == null) return new String[]{"", ""};
-        String n = fullName.trim();
-        if (n.isEmpty()) return new String[]{"", ""};
 
-        int lastSpace = n.lastIndexOf(' ');
-        if (lastSpace == -1) return new String[]{n, ""};
+        if (fullName == null || fullName.isBlank()) {
+            return new String[]{"", ""};
+        }
 
-        String first = n.substring(0, lastSpace).trim();
-        String last = n.substring(lastSpace + 1).trim();
-        return new String[]{first, last};
+        int lastSpace = fullName.lastIndexOf(' ');
+        if (lastSpace == -1) {
+            return new String[]{fullName, ""};
+        }
+
+        return new String[]{
+                fullName.substring(0, lastSpace).trim(),
+                fullName.substring(lastSpace + 1).trim()
+        };
     }
 
     /**
