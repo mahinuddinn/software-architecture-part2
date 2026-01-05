@@ -1191,15 +1191,19 @@ private void viewReferral() {
         JButton addBtn = new JButton("Add Staff");
         JButton editBtn = new JButton("Edit Staff");
         JButton deleteBtn = new JButton("Delete Staff");
+        JButton viewBtn = new JButton("View Staff"); // ✅ NEW
 
         addBtn.addActionListener(e -> addStaff());
         editBtn.addActionListener(e -> editStaff());
         deleteBtn.addActionListener(e -> deleteStaff());
+        viewBtn.addActionListener(e -> viewStaff()); // ✅ NEW
 
         JPanel buttons = new JPanel();
         buttons.add(addBtn);
         buttons.add(editBtn);
         buttons.add(deleteBtn);
+        buttons.add(viewBtn); // ✅ ADD THIS
+
 
         panel.add(new JScrollPane(staffTable), BorderLayout.CENTER);
         panel.add(buttons, BorderLayout.SOUTH);
@@ -1251,6 +1255,48 @@ private void viewReferral() {
             showError(ex);
         }
     }
+
+    /**
+ * View Staff
+ * ----------
+ * Displays all details of the selected staff member
+ * in a read-only dialog.
+ */
+private void viewStaff() {
+
+    int row = staffTable.getSelectedRow();
+
+    if (row == -1) {
+        JOptionPane.showMessageDialog(
+                this,
+                "Please select a staff member to view.",
+                "No Selection",
+                JOptionPane.WARNING_MESSAGE
+        );
+        return;
+    }
+
+    // Read directly from the table model (safe + fast)
+    String staffId = staffTableModel.getValueAt(row, 0).toString();
+    String name = staffTableModel.getValueAt(row, 1).toString();
+    String role = staffTableModel.getValueAt(row, 2).toString();
+    String department = staffTableModel.getValueAt(row, 3).toString();
+
+    // Build a clean display message
+    String message =
+            "Staff ID: " + staffId + "\n" +
+            "Name: " + name + "\n" +
+            "Role: " + role + "\n" +
+            "Department: " + department;
+
+    JOptionPane.showMessageDialog(
+            this,
+            message,
+            "View Staff",
+            JOptionPane.INFORMATION_MESSAGE
+    );
+}
+
 
     private void editStaff() {
         int row = staffTable.getSelectedRow();
@@ -1312,39 +1358,47 @@ private void viewReferral() {
         }
     }
 
-    /* =========================================================
-   FACILITIES TAB (ADD / EDIT / DELETE)
+/* =========================================================
+   FACILITIES TAB (ADD / EDIT / DELETE / VIEW)
+   CSV:
+   facilityId,name,type,address,phoneNumber
    ========================================================= */
-
 private JPanel createFacilityPanel() {
 
     JPanel panel = new JPanel(new BorderLayout());
 
+    // ✅ COLUMN COUNT MUST MATCH MODEL + CSV
     facilityTableModel = new DefaultTableModel(
-            new String[]{"Facility ID", "Name", "Type", "Location"}, 0
+            new String[]{"Facility ID", "Name", "Type", "Address", "Phone Number"}, 0
     );
+
     facilityTable = new JTable(facilityTableModel);
+    facilityTable.setRowHeight(22);
 
     loadFacilities();
 
-    JButton add = new JButton("Add");
-    JButton edit = new JButton("Edit");
-    JButton delete = new JButton("Delete");
+    JButton addBtn = new JButton("Add Facility");
+    JButton editBtn = new JButton("Edit Facility");
+    JButton deleteBtn = new JButton("Delete Facility");
+    JButton viewBtn = new JButton("View Facility");
 
-    add.addActionListener(e -> addFacility());
-    edit.addActionListener(e -> editFacility());
-    delete.addActionListener(e -> deleteFacility());
+    addBtn.addActionListener(e -> addFacility());
+    editBtn.addActionListener(e -> editFacility());
+    deleteBtn.addActionListener(e -> deleteFacility());
+    viewBtn.addActionListener(e -> viewFacility());
 
     JPanel buttons = new JPanel();
-    buttons.add(add);
-    buttons.add(edit);
-    buttons.add(delete);
+    buttons.add(addBtn);
+    buttons.add(editBtn);
+    buttons.add(deleteBtn);
+    buttons.add(viewBtn);
 
     panel.add(new JScrollPane(facilityTable), BorderLayout.CENTER);
     panel.add(buttons, BorderLayout.SOUTH);
 
     return panel;
 }
+
 
 private void loadFacilities() {
     try {
@@ -1354,9 +1408,10 @@ private void loadFacilities() {
         for (Facility f : facilityRepository.getAll()) {
             facilityTableModel.addRow(new Object[]{
                     f.getFacilityId(),
-                    f.getFacilityName(),
-                    f.getFacilityType(),
-                    f.getLocation()
+                    f.getName(),
+                    f.getType(),
+                    f.getAddress(),
+                    f.getPhoneNumber()
             });
         }
     } catch (Exception e) {
@@ -1364,43 +1419,100 @@ private void loadFacilities() {
     }
 }
 
+
+/**
+ * View Facility
+ * -------------
+ * Displays full details of the selected facility
+ * in a read-only dialog.
+ */
+private void viewFacility() {
+
+    int row = facilityTable.getSelectedRow();
+    if (row == -1) {
+        JOptionPane.showMessageDialog(
+                this,
+                "Please select a facility first.",
+                "No Selection",
+                JOptionPane.WARNING_MESSAGE
+        );
+        return;
+    }
+
+    String message =
+            "Facility ID: " + facilityTableModel.getValueAt(row, 0) + "\n" +
+            "Name: " + facilityTableModel.getValueAt(row, 1) + "\n" +
+            "Type: " + facilityTableModel.getValueAt(row, 2) + "\n" +
+            "Address: " + facilityTableModel.getValueAt(row, 3) + "\n" +
+            "Phone Number: " + facilityTableModel.getValueAt(row, 4);
+
+    JOptionPane.showMessageDialog(
+            this,
+            message,
+            "View Facility",
+            JOptionPane.INFORMATION_MESSAGE
+    );
+}
+
+
+
 private void addFacility() {
     try {
-        Facility f = new Facility(
-                JOptionPane.showInputDialog(this, "Facility ID"),
-                JOptionPane.showInputDialog(this, "Facility Name"),
-                JOptionPane.showInputDialog(this, "Facility Type"),
-                JOptionPane.showInputDialog(this, "Location")
-        );
+        String id = promptRequired("Facility ID");
+        if (id == null) return;
+
+        String name = promptRequired("Facility Name");
+        if (name == null) return;
+
+        String type = promptRequired("Facility Type");
+        if (type == null) return;
+
+        String address = promptRequired("Address");
+        if (address == null) return;
+
+        String phone = promptRequired("Phone Number");
+        if (phone == null) return;
+
+        Facility f = new Facility(id, name, type, address, phone);
 
         facilityRepository.addFacility(f);
         loadFacilities();
+
+        JOptionPane.showMessageDialog(this, "Facility added successfully.");
 
     } catch (Exception e) {
         showError(e);
     }
 }
 
+
 private void editFacility() {
 
     int row = facilityTable.getSelectedRow();
-    if (row == -1) return;
+    if (row == -1) {
+        JOptionPane.showMessageDialog(this, "Select a facility first.");
+        return;
+    }
 
     try {
         Facility updated = new Facility(
                 facilityTableModel.getValueAt(row, 0).toString(),
-                JOptionPane.showInputDialog(this, "Facility Name", facilityTableModel.getValueAt(row, 1)),
-                JOptionPane.showInputDialog(this, "Facility Type", facilityTableModel.getValueAt(row, 2)),
-                JOptionPane.showInputDialog(this, "Location", facilityTableModel.getValueAt(row, 3))
+                promptRequiredDefault("Facility Name", facilityTableModel.getValueAt(row, 1).toString()),
+                promptRequiredDefault("Facility Type", facilityTableModel.getValueAt(row, 2).toString()),
+                promptRequiredDefault("Address", facilityTableModel.getValueAt(row, 3).toString()),
+                promptRequiredDefault("Phone Number", facilityTableModel.getValueAt(row, 4).toString())
         );
 
         facilityRepository.updateFacility(updated);
         loadFacilities();
 
+        JOptionPane.showMessageDialog(this, "Facility updated successfully.");
+
     } catch (Exception e) {
         showError(e);
     }
 }
+
 
 private void deleteFacility() {
 
