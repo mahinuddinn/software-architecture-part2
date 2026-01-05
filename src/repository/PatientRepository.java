@@ -122,6 +122,37 @@ public void load(String filePath) throws IOException {
     }
 
     /**
+ * Updates an existing patient based on NHS number.
+ *
+ * @param updatedPatient the patient with updated details
+ */
+public void updatePatient(Patient updatedPatient) throws IOException {
+
+    boolean found = false;
+
+    for (int i = 0; i < patients.size(); i++) {
+        Patient existing = patients.get(i);
+
+        // NHS number is the primary key
+        if (existing.getNhsNumber()
+                .equalsIgnoreCase(updatedPatient.getNhsNumber())) {
+
+            patients.set(i, updatedPatient);
+            found = true;
+            break;
+        }
+    }
+
+    if (!found) {
+        throw new IllegalArgumentException("Patient not found.");
+    }
+
+    // Persist changes back to CSV
+    saveToCsv();
+}
+
+
+    /**
      * Deletes a patient using their NHS number and persists the change.
      *
      * @param nhsNumber NHS number of the patient to delete

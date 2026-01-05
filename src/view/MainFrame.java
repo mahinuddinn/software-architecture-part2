@@ -162,15 +162,22 @@ public class MainFrame extends JFrame {
         loadPatients();
 
         // Button panel
+        // -------- Buttons --------
         JButton addBtn = new JButton("Add Patient");
+        JButton editBtn = new JButton("Edit Patient");
         JButton deleteBtn = new JButton("Delete Patient");
+        JButton viewBtn = new JButton("View Patient");
 
         addBtn.addActionListener(e -> addPatient());
+        editBtn.addActionListener(e -> editPatient());
         deleteBtn.addActionListener(e -> deletePatient());
+        viewBtn.addActionListener(e -> viewPatient());
 
         JPanel buttons = new JPanel();
         buttons.add(addBtn);
+        buttons.add(editBtn);
         buttons.add(deleteBtn);
+        buttons.add(viewBtn);
 
         panel.add(new JScrollPane(patientTable), BorderLayout.CENTER);
         panel.add(buttons, BorderLayout.SOUTH);
@@ -250,6 +257,94 @@ public class MainFrame extends JFrame {
             showError(ex);
         }
     }
+
+    private void editPatient() {
+
+    int row = patientTable.getSelectedRow();
+    if (row == -1) {
+        JOptionPane.showMessageDialog(this, "Select a patient first.");
+        return;
+    }
+
+    try {
+        String nhs = patientTableModel.getValueAt(row, 0).toString();
+
+        String first = promptRequiredDefault("First Name", patientTableModel.getValueAt(row, 1).toString());
+        String last = promptRequiredDefault("Last Name", patientTableModel.getValueAt(row, 2).toString());
+        String dob = promptRequiredDefault("Date of Birth", patientTableModel.getValueAt(row, 3).toString());
+        String phone = promptRequiredDefault("Phone Number", patientTableModel.getValueAt(row, 4).toString());
+        String gender = promptRequiredDefault("Gender", patientTableModel.getValueAt(row, 5).toString());
+        String gp = promptRequiredDefault("Registered GP Surgery", patientTableModel.getValueAt(row, 6).toString());
+
+        Patient updated = new Patient(
+                nhs,
+                first,
+                last,
+                dob,
+                phone,
+                gender,
+                gp
+        );
+
+        patientRepository.updatePatient(updated);
+        loadPatients();
+
+        JOptionPane.showMessageDialog(this, "Patient updated successfully.");
+
+    } catch (Exception e) {
+        showError(e);
+    }
+}
+
+private void viewPatient() {
+
+    int row = patientTable.getSelectedRow();
+    if (row == -1) {
+        JOptionPane.showMessageDialog(this, "Select a patient first.");
+        return;
+    }
+
+    StringBuilder details = new StringBuilder();
+    details.append("PATIENT DETAILS\n");
+    details.append("====================\n\n");
+
+    details.append("NHS Number: ")
+           .append(patientTableModel.getValueAt(row, 0)).append("\n");
+
+    details.append("First Name: ")
+           .append(patientTableModel.getValueAt(row, 1)).append("\n");
+
+    details.append("Last Name: ")
+           .append(patientTableModel.getValueAt(row, 2)).append("\n");
+
+    details.append("Date of Birth: ")
+           .append(patientTableModel.getValueAt(row, 3)).append("\n");
+
+    details.append("Phone Number: ")
+           .append(patientTableModel.getValueAt(row, 4)).append("\n");
+
+    details.append("Gender: ")
+           .append(patientTableModel.getValueAt(row, 5)).append("\n");
+
+    details.append("Registered GP Surgery: ")
+           .append(patientTableModel.getValueAt(row, 6)).append("\n");
+
+    JTextArea textArea = new JTextArea(details.toString());
+    textArea.setEditable(false);
+    textArea.setLineWrap(true);
+    textArea.setWrapStyleWord(true);
+
+    JScrollPane scrollPane = new JScrollPane(textArea);
+    scrollPane.setPreferredSize(new Dimension(400, 300));
+
+    JOptionPane.showMessageDialog(
+            this,
+            scrollPane,
+            "View Patient",
+            JOptionPane.INFORMATION_MESSAGE
+    );
+}
+
 
     /**
      * Deletes selected patient (by NHS number).
