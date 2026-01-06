@@ -326,28 +326,41 @@ public class MainFrame extends JFrame {
 
 private void editPatient() {
 
+    // Ensure a row is selected
     int row = patientTable.getSelectedRow();
     if (row == -1) {
         JOptionPane.showMessageDialog(this, "Please select a patient first.");
         return;
     }
 
-    // Create form fields (pre-filled from table)
-    JTextField nhsField = new JTextField(patientTableModel.getValueAt(row, 0).toString());
-    nhsField.setEditable(false);
+    // Read existing values from the table model
+    String nhsNumber = patientTableModel.getValueAt(row, 0).toString();
 
-    JTextField firstNameField = new JTextField(patientTableModel.getValueAt(row, 1).toString());
-    JTextField lastNameField = new JTextField(patientTableModel.getValueAt(row, 2).toString());
-    JTextField dobField = new JTextField(patientTableModel.getValueAt(row, 3).toString());
-    JTextField phoneField = new JTextField(patientTableModel.getValueAt(row, 4).toString());
-    JTextField emergencyField = new JTextField(patientTableModel.getValueAt(row, 5).toString());
-    JTextField genderField = new JTextField(patientTableModel.getValueAt(row, 6).toString());
-    JTextField addressField = new JTextField(patientTableModel.getValueAt(row, 7).toString());
-    JTextField postcodeField = new JTextField(patientTableModel.getValueAt(row, 8).toString());
-    JTextField emailField = new JTextField(patientTableModel.getValueAt(row, 9).toString());
-    JTextField gpField = new JTextField(patientTableModel.getValueAt(row, 10).toString());
+    JTextField nhsField = new JTextField(nhsNumber);
+    nhsField.setEditable(false); // Identifier must not be changed
 
-    // Build form panel
+    JTextField firstNameField =
+            new JTextField(patientTableModel.getValueAt(row, 1).toString());
+    JTextField lastNameField =
+            new JTextField(patientTableModel.getValueAt(row, 2).toString());
+    JTextField dobField =
+            new JTextField(patientTableModel.getValueAt(row, 3).toString());
+    JTextField phoneField =
+            new JTextField(patientTableModel.getValueAt(row, 4).toString());
+    JTextField emergencyField =
+            new JTextField(patientTableModel.getValueAt(row, 5).toString());
+    JTextField genderField =
+            new JTextField(patientTableModel.getValueAt(row, 6).toString());
+    JTextField addressField =
+            new JTextField(patientTableModel.getValueAt(row, 7).toString());
+    JTextField postcodeField =
+            new JTextField(patientTableModel.getValueAt(row, 8).toString());
+    JTextField emailField =
+            new JTextField(patientTableModel.getValueAt(row, 9).toString());
+    JTextField gpField =
+            new JTextField(patientTableModel.getValueAt(row, 10).toString());
+
+    // Build the form panel
     JPanel panel = new JPanel();
     panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 
@@ -384,6 +397,7 @@ private void editPatient() {
     panel.add(new JLabel("Registered GP Surgery"));
     panel.add(gpField);
 
+    // Show the dialog
     int result = JOptionPane.showConfirmDialog(
             this,
             panel,
@@ -392,33 +406,59 @@ private void editPatient() {
             JOptionPane.PLAIN_MESSAGE
     );
 
-    if (result != JOptionPane.OK_OPTION) return;
+    if (result != JOptionPane.OK_OPTION) {
+        return;
+    }
 
-    // ✅ VALIDATION: prevent empty patient fields
-if (firstNameField.getText().trim().isEmpty() ||
-    lastNameField.getText().trim().isEmpty() ||
-    dobField.getText().trim().isEmpty() ||
-    phoneField.getText().trim().isEmpty() ||
-    emergencyField.getText().trim().isEmpty() ||
-    genderField.getText().trim().isEmpty() ||
-    addressField.getText().trim().isEmpty() ||
-    postcodeField.getText().trim().isEmpty() ||
-    emailField.getText().trim().isEmpty() ||
-    gpField.getText().trim().isEmpty()) {
+    // Field-specific validation
+    StringBuilder missingFields = new StringBuilder();
 
-    JOptionPane.showMessageDialog(
-            this,
-            "All fields must be filled in.",
-            "Validation Error",
-            JOptionPane.WARNING_MESSAGE
-    );
-    return;
-}
+    if (firstNameField.getText().trim().isEmpty()) {
+        missingFields.append("- First Name\n");
+    }
+    if (lastNameField.getText().trim().isEmpty()) {
+        missingFields.append("- Last Name\n");
+    }
+    if (dobField.getText().trim().isEmpty()) {
+        missingFields.append("- Date of Birth\n");
+    }
+    if (phoneField.getText().trim().isEmpty()) {
+        missingFields.append("- Phone Number\n");
+    }
+    if (emergencyField.getText().trim().isEmpty()) {
+        missingFields.append("- Emergency Contact Number\n");
+    }
+    if (genderField.getText().trim().isEmpty()) {
+        missingFields.append("- Gender\n");
+    }
+    if (addressField.getText().trim().isEmpty()) {
+        missingFields.append("- Address\n");
+    }
+    if (postcodeField.getText().trim().isEmpty()) {
+        missingFields.append("- Postcode\n");
+    }
+    if (emailField.getText().trim().isEmpty()) {
+        missingFields.append("- Email\n");
+    }
+    if (gpField.getText().trim().isEmpty()) {
+        missingFields.append("- Registered GP Surgery\n");
+    }
 
+    // Show validation message if any fields are missing
+    if (missingFields.length() > 0) {
+        JOptionPane.showMessageDialog(
+                this,
+                "Please fill in the following fields:\n\n" + missingFields,
+                "Validation Error",
+                JOptionPane.WARNING_MESSAGE
+        );
+        return;
+    }
 
     try {
+        // Create updated patient object
         Patient updated = new Patient(
-                nhsField.getText().trim(),
+                nhsNumber,
                 firstNameField.getText().trim(),
                 lastNameField.getText().trim(),
                 dobField.getText().trim(),
@@ -431,6 +471,7 @@ if (firstNameField.getText().trim().isEmpty() ||
                 gpField.getText().trim()
         );
 
+        // Persist changes and refresh table
         patientRepository.updatePatient(updated);
         loadPatients();
 
@@ -440,6 +481,7 @@ if (firstNameField.getText().trim().isEmpty() ||
         showError(ex);
     }
 }
+
 
 
 private void viewPatient() {
@@ -616,17 +658,23 @@ private void viewPatientPrescriptions() {
     JButton editBtn = new JButton("Edit Clinician");
     JButton deleteBtn = new JButton("Delete Clinician");
     JButton viewBtn = new JButton("View Clinician");
+    JButton viewPrescriptionsBtn = new JButton("View Prescriptions");
+
 
     addBtn.addActionListener(e -> addClinician());
     editBtn.addActionListener(e -> editClinician());
     deleteBtn.addActionListener(e -> deleteClinician());
     viewBtn.addActionListener(e -> viewClinician());
+    viewPrescriptionsBtn.addActionListener(e -> viewClinicianPrescriptions());
+
 
     JPanel buttons = new JPanel();
     buttons.add(addBtn);
     buttons.add(editBtn);
     buttons.add(deleteBtn);
     buttons.add(viewBtn);
+    buttons.add(viewPrescriptionsBtn);
+
 
     // ✅ THIS LINE WAS MISSING
     panel.add(new JScrollPane(clinicianTable), BorderLayout.CENTER);
@@ -770,6 +818,71 @@ private void addClinician() {
             JOptionPane.INFORMATION_MESSAGE
     );
 }
+
+private void viewClinicianPrescriptions() {
+
+    int row = clinicianTable.getSelectedRow();
+    if (row == -1) {
+        JOptionPane.showMessageDialog(
+                this,
+                "Please select a clinician first.",
+                "No Selection",
+                JOptionPane.WARNING_MESSAGE
+        );
+        return;
+    }
+
+    String clinicianId = clinicianTableModel.getValueAt(row, 0).toString();
+
+    StringBuilder details = new StringBuilder();
+    details.append("Prescriptions issued by clinician: ")
+           .append(clinicianId)
+           .append("\n\n");
+
+    boolean found = false;
+
+    try {
+        // Ensure prescriptions are loaded
+        prescriptionRepository.load("data/prescriptions.csv");
+
+        for (Prescription p : prescriptionRepository.getAll()) {
+
+            if (p.getClinicianId().equalsIgnoreCase(clinicianId)) {
+                found = true;
+
+                details.append("Prescription ID: ").append(p.getPrescriptionId()).append("\n");
+                details.append("Patient NHS: ").append(p.getPatientNhsNumber()).append("\n");
+                details.append("Medication: ").append(p.getMedication()).append("\n");
+                details.append("Dosage: ").append(p.getDosage()).append("\n");
+                details.append("Pharmacy: ").append(p.getPharmacy()).append("\n");
+                details.append("Status: ").append(p.getCollectionStatus()).append("\n");
+                details.append("------------------------------\n");
+            }
+        }
+
+        if (!found) {
+            details.append("No prescriptions found for this clinician.");
+        }
+
+        JTextArea textArea = new JTextArea(details.toString(), 20, 60);
+        textArea.setEditable(false);
+        textArea.setLineWrap(true);
+        textArea.setWrapStyleWord(true);
+
+        JScrollPane scrollPane = new JScrollPane(textArea);
+
+        JOptionPane.showMessageDialog(
+                this,
+                scrollPane,
+                "Clinician Prescriptions",
+                JOptionPane.INFORMATION_MESSAGE
+        );
+
+    } catch (Exception ex) {
+        showError(ex);
+    }
+}
+
 
 
     private void editClinician() {
