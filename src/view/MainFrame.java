@@ -19,6 +19,11 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.util.ArrayList;
+import java.util.List;
+import java.awt.GridLayout;
+
+
 
 /**
  * MainFrame
@@ -1184,40 +1189,93 @@ private void viewPrescription() {
     }
 
 private void addPrescription() {
+
+    JTextField txtId = new JTextField();
+    JTextField txtPatientNhs = new JTextField();
+    JTextField txtClinicianId = new JTextField();
+    JTextField txtMedication = new JTextField();
+    JTextField txtDosage = new JTextField();
+
+    JComboBox<String> cmbPharmacy = new JComboBox<>(new String[]{
+            "Boots Pharmacy",
+            "Lloyds Pharmacy",
+            "Superdrug Pharmacy",
+            "Well Pharmacy",
+            "Tesco Pharmacy",
+            "Asda Pharmacy",
+            "Hospital Pharmacy"
+    });
+
+    JComboBox<String> cmbStatus = new JComboBox<>(new String[]{
+            "Pending",
+            "Collected"
+    });
+
+    JPanel panel = new JPanel(new GridLayout(0, 2, 8, 8));
+
+    panel.add(new JLabel("Prescription ID:"));
+    panel.add(txtId);
+
+    panel.add(new JLabel("Patient NHS Number:"));
+    panel.add(txtPatientNhs);
+
+    panel.add(new JLabel("Clinician ID:"));
+    panel.add(txtClinicianId);
+
+    panel.add(new JLabel("Medication:"));
+    panel.add(txtMedication);
+
+    panel.add(new JLabel("Dosage:"));
+    panel.add(txtDosage);
+
+    panel.add(new JLabel("Pharmacy:"));
+    panel.add(cmbPharmacy);
+
+    panel.add(new JLabel("Collection Status:"));
+    panel.add(cmbStatus);
+
+    int result = JOptionPane.showConfirmDialog(
+            this,
+            panel,
+            "Add Prescription",
+            JOptionPane.OK_CANCEL_OPTION,
+            JOptionPane.PLAIN_MESSAGE
+    );
+
+    if (result != JOptionPane.OK_OPTION) return;
+
+    // ---------- Validation ----------
+    List<String> missingFields = new ArrayList<>();
+
+    if (txtId.getText().trim().isEmpty()) missingFields.add("Prescription ID");
+    if (txtPatientNhs.getText().trim().isEmpty()) missingFields.add("Patient NHS Number");
+    if (txtClinicianId.getText().trim().isEmpty()) missingFields.add("Clinician ID");
+    if (txtMedication.getText().trim().isEmpty()) missingFields.add("Medication");
+    if (txtDosage.getText().trim().isEmpty()) missingFields.add("Dosage");
+
+    if (!missingFields.isEmpty()) {
+        JOptionPane.showMessageDialog(
+                this,
+                "Please fill in:\n\n" + String.join("\n", missingFields),
+                "Missing Information",
+                JOptionPane.WARNING_MESSAGE
+        );
+        return;
+    }
+
     try {
-        String id = promptRequired("Prescription ID");
-        if (id == null) return;
-
-        String patientNhs = promptRequired("Patient NHS Number");
-        if (patientNhs == null) return;
-
-        String clinicianId = promptRequired("Clinician ID");
-        if (clinicianId == null) return;
-
-        String medication = promptRequired("Medication");
-        if (medication == null) return;
-
-        String dosage = promptRequired("Dosage");
-        if (dosage == null) return;
-
-        String pharmacy = promptRequired("Pharmacy");
-        if (pharmacy == null) return;
-
-        String status = promptRequired("Collection Status (e.g. Pending)");
-        if (status == null) return;
-
-        // ✅ CORRECT constructor order
-        Prescription p = new Prescription(
-                id,
-                patientNhs,
-                clinicianId,
-                medication,
-                dosage,
-                pharmacy,
-                status
+        Prescription prescription = new Prescription(
+                txtId.getText().trim(),
+                txtPatientNhs.getText().trim(),
+                txtClinicianId.getText().trim(),
+                txtMedication.getText().trim(),
+                txtDosage.getText().trim(),
+                cmbPharmacy.getSelectedItem().toString(),
+                cmbStatus.getSelectedItem().toString()
         );
 
-        prescriptionRepository.addPrescription(p);
+        // ✅ Correct repository methods
+        prescriptionRepository.addPrescription(prescription);
         loadPrescriptions();
 
         JOptionPane.showMessageDialog(this, "Prescription added successfully.");
@@ -1226,6 +1284,8 @@ private void addPrescription() {
         showError(ex);
     }
 }
+
+
 
 
 private void editPrescription() {
