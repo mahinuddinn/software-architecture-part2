@@ -394,6 +394,28 @@ private void editPatient() {
 
     if (result != JOptionPane.OK_OPTION) return;
 
+    // ✅ VALIDATION: prevent empty patient fields
+if (firstNameField.getText().trim().isEmpty() ||
+    lastNameField.getText().trim().isEmpty() ||
+    dobField.getText().trim().isEmpty() ||
+    phoneField.getText().trim().isEmpty() ||
+    emergencyField.getText().trim().isEmpty() ||
+    genderField.getText().trim().isEmpty() ||
+    addressField.getText().trim().isEmpty() ||
+    postcodeField.getText().trim().isEmpty() ||
+    emailField.getText().trim().isEmpty() ||
+    gpField.getText().trim().isEmpty()) {
+
+    JOptionPane.showMessageDialog(
+            this,
+            "All fields must be filled in.",
+            "Validation Error",
+            JOptionPane.WARNING_MESSAGE
+    );
+    return;
+}
+
+
     try {
         Patient updated = new Patient(
                 nhsField.getText().trim(),
@@ -752,22 +774,23 @@ private void addClinician() {
 
     private void editClinician() {
 
+    // Ensure a row is selected
     int row = clinicianTable.getSelectedRow();
     if (row == -1) {
         JOptionPane.showMessageDialog(this, "Please select a clinician first.");
         return;
     }
 
-    // Existing values from table
+    // Read existing values from the table model
     String clinicianId = clinicianTableModel.getValueAt(row, 0).toString();
     String name = clinicianTableModel.getValueAt(row, 1).toString();
     String role = clinicianTableModel.getValueAt(row, 2).toString();
     String specialty = clinicianTableModel.getValueAt(row, 3).toString();
     String staffCode = clinicianTableModel.getValueAt(row, 4).toString();
 
-    // Create fields (pre-filled)
+    // Create form fields (pre-filled with existing values)
     JTextField idField = new JTextField(clinicianId);
-    idField.setEditable(false); // ID should not change
+    idField.setEditable(false); // Identifier must not be changed
 
     JTextField nameField = new JTextField(name);
 
@@ -784,7 +807,7 @@ private void addClinician() {
     JTextField specialtyField = new JTextField(specialty);
     JTextField staffCodeField = new JTextField(staffCode);
 
-    // Build form panel
+    // Build the form panel
     JPanel panel = new JPanel();
     panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 
@@ -803,6 +826,7 @@ private void addClinician() {
     panel.add(new JLabel("Staff Code"));
     panel.add(staffCodeField);
 
+    // Display the dialog
     int result = JOptionPane.showConfirmDialog(
             this,
             panel,
@@ -811,24 +835,36 @@ private void addClinician() {
             JOptionPane.PLAIN_MESSAGE
     );
 
-    if (result != JOptionPane.OK_OPTION) return;
+    if (result != JOptionPane.OK_OPTION) {
+        return;
+    }
 
-    // VALIDATION: prevent empty fields
-if (nameField.getText().trim().isEmpty() ||
-    specialtyField.getText().trim().isEmpty() ||
-    staffCodeField.getText().trim().isEmpty()) {
+    // Field-specific validation to prevent empty values
+    StringBuilder missingFields = new StringBuilder();
 
-    JOptionPane.showMessageDialog(
-            this,
-            "All fields must be filled in.",
-            "Validation Error",
-            JOptionPane.WARNING_MESSAGE
-    );
-    return;
-}
+    if (nameField.getText().trim().isEmpty()) {
+        missingFields.append("- Full Name\n");
+    }
+    if (specialtyField.getText().trim().isEmpty()) {
+        missingFields.append("- Specialty\n");
+    }
+    if (staffCodeField.getText().trim().isEmpty()) {
+        missingFields.append("- Staff Code\n");
+    }
 
+    // Show validation message if any fields are missing
+    if (missingFields.length() > 0) {
+        JOptionPane.showMessageDialog(
+                this,
+                "Please fill in the following fields:\n\n" + missingFields,
+                "Validation Error",
+                JOptionPane.WARNING_MESSAGE
+        );
+        return;
+    }
 
     try {
+        // Create updated clinician object
         Clinician updated = new Clinician(
                 clinicianId,
                 nameField.getText().trim(),
@@ -837,6 +873,7 @@ if (nameField.getText().trim().isEmpty() ||
                 staffCodeField.getText().trim()
         );
 
+        // Persist changes and refresh table
         clinicianRepository.update(updated);
         loadClinicians();
 
@@ -846,6 +883,7 @@ if (nameField.getText().trim().isEmpty() ||
         showError(ex);
     }
 }
+
 
 
     private void deleteClinician() {
@@ -1078,54 +1116,108 @@ private void addPrescription() {
 
 
 private void editPrescription() {
+
     int row = prescriptionTable.getSelectedRow();
     if (row == -1) {
         JOptionPane.showMessageDialog(this, "Select a prescription row first.");
         return;
     }
 
+    // Existing values from table
+    String prescriptionId = prescriptionTableModel.getValueAt(row, 0).toString();
+
+    JTextField prescriptionIdField = new JTextField(prescriptionId);
+    prescriptionIdField.setEditable(false);
+
+    JTextField patientNhsField =
+            new JTextField(prescriptionTableModel.getValueAt(row, 1).toString());
+    JTextField clinicianIdField =
+            new JTextField(prescriptionTableModel.getValueAt(row, 2).toString());
+    JTextField medicationField =
+            new JTextField(prescriptionTableModel.getValueAt(row, 3).toString());
+    JTextField dosageField =
+            new JTextField(prescriptionTableModel.getValueAt(row, 4).toString());
+    JTextField pharmacyField =
+            new JTextField(prescriptionTableModel.getValueAt(row, 5).toString());
+    JTextField statusField =
+            new JTextField(prescriptionTableModel.getValueAt(row, 6).toString());
+
+    // Build form panel
+    JPanel panel = new JPanel();
+    panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+
+    panel.add(new JLabel("Prescription ID"));
+    panel.add(prescriptionIdField);
+
+    panel.add(new JLabel("Patient NHS Number"));
+    panel.add(patientNhsField);
+
+    panel.add(new JLabel("Clinician ID"));
+    panel.add(clinicianIdField);
+
+    panel.add(new JLabel("Medication"));
+    panel.add(medicationField);
+
+    panel.add(new JLabel("Dosage"));
+    panel.add(dosageField);
+
+    panel.add(new JLabel("Pharmacy"));
+    panel.add(pharmacyField);
+
+    panel.add(new JLabel("Collection Status"));
+    panel.add(statusField);
+
+    int result = JOptionPane.showConfirmDialog(
+            this,
+            panel,
+            "Edit Prescription",
+            JOptionPane.OK_CANCEL_OPTION,
+            JOptionPane.PLAIN_MESSAGE
+    );
+
+    if (result != JOptionPane.OK_OPTION) return;
+
+    // ✅ FIELD-SPECIFIC VALIDATION
+    StringBuilder missingFields = new StringBuilder();
+
+    if (patientNhsField.getText().trim().isEmpty()) {
+        missingFields.append("- Patient NHS Number\n");
+    }
+    if (clinicianIdField.getText().trim().isEmpty()) {
+        missingFields.append("- Clinician ID\n");
+    }
+    if (medicationField.getText().trim().isEmpty()) {
+        missingFields.append("- Medication\n");
+    }
+    if (dosageField.getText().trim().isEmpty()) {
+        missingFields.append("- Dosage\n");
+    }
+    if (pharmacyField.getText().trim().isEmpty()) {
+        missingFields.append("- Pharmacy\n");
+    }
+    if (statusField.getText().trim().isEmpty()) {
+        missingFields.append("- Collection Status\n");
+    }
+
+    if (missingFields.length() > 0) {
+        JOptionPane.showMessageDialog(
+                this,
+                "Please fill in the following fields:\n\n" + missingFields,
+                "Validation Error",
+                JOptionPane.WARNING_MESSAGE
+        );
+        return;
+    }
+
     try {
-        String id = prescriptionTableModel.getValueAt(row, 0).toString();
-
-        String patientNhs = promptRequiredDefault(
-                "Patient NHS",
-                prescriptionTableModel.getValueAt(row, 1).toString()
-        );
-
-        String clinicianId = promptRequiredDefault(
-                "Clinician ID",
-                prescriptionTableModel.getValueAt(row, 2).toString()
-        );
-
-        String medication = promptRequiredDefault(
-                "Medication",
-                prescriptionTableModel.getValueAt(row, 3).toString()
-        );
-
-        String dosage = promptRequiredDefault(
-                "Dosage",
-                prescriptionTableModel.getValueAt(row, 4).toString()
-        );
-
-        String pharmacy = promptRequiredDefault(
-                "Pharmacy",
-                prescriptionTableModel.getValueAt(row, 5).toString()
-        );
-
-        String status = promptRequiredDefault(
-                "Collection Status",
-                prescriptionTableModel.getValueAt(row, 6).toString()
-        );
-
-        // ✅ CORRECT order
         Prescription updated = new Prescription(
-                id,
-                patientNhs,
-                clinicianId,
-                medication,
-                dosage,
-                pharmacy,
-                status
+                prescriptionId,
+                patientNhsField.getText().trim(),
+                clinicianIdField.getText().trim(),
+                medicationField.getText().trim(),
+                dosageField.getText().trim(),
+                pharmacyField.getText().trim(),
+                statusField.getText().trim()
         );
 
         prescriptionRepository.updatePrescription(updated);
