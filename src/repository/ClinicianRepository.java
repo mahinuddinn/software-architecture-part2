@@ -39,30 +39,40 @@ public void load(String filePath) throws IOException {
         while ((line = br.readLine()) != null) {
 
             String[] cols = line.split(",", -1);
-            if (cols.length < 6) continue;
 
-            // CSV structure:
-            // 0 = clinicianId
-            // 1 = firstName
-            // 2 = lastName
-            // 3 = role
-            // 4 = specialty
-            // 5 = workplace
+            /*
+             * Supported formats:
+             * OLD: clinicianId,firstName,lastName,role,specialty,workplace (6 cols)
+             * NEW: clinicianId,name,role,specialty,workplace (5 cols)
+             */
 
-            String fullName = cols[1].trim() + " " + cols[2].trim();
+            if (cols.length == 6) {
+                // OLD format
+                String fullName = cols[1].trim() + " " + cols[2].trim();
 
-            Clinician clinician = new Clinician(
-                    cols[0].trim(),      // clinicianId
-                    fullName,            // name (combined)
-                    cols[3].trim(),      // role
-                    cols[4].trim(),      // specialty
-                    cols[5].trim()       // workplace
-            );
+                clinicians.add(new Clinician(
+                        cols[0].trim(),
+                        fullName,
+                        cols[3].trim(),
+                        cols[4].trim(),
+                        cols[5].trim()
+                ));
 
-            clinicians.add(clinician);
+            } else if (cols.length == 5) {
+                // NEW format (current save format)
+                clinicians.add(new Clinician(
+                        cols[0].trim(),
+                        cols[1].trim(),
+                        cols[2].trim(),
+                        cols[3].trim(),
+                        cols[4].trim()
+                ));
+            }
+            // Ignore malformed rows safely
         }
     }
 }
+
 
 
     /* =====================================================

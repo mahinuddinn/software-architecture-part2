@@ -173,17 +173,22 @@ public class MainFrame extends JFrame {
         JButton editBtn = new JButton("Edit Patient");
         JButton deleteBtn = new JButton("Delete Patient");
         JButton viewBtn = new JButton("View Patient");
+        JButton prescriptionsBtn = new JButton("View Prescriptions");
+
 
         addBtn.addActionListener(e -> addPatient());
         editBtn.addActionListener(e -> editPatient());
         deleteBtn.addActionListener(e -> deletePatient());
         viewBtn.addActionListener(e -> viewPatient());
+        prescriptionsBtn.addActionListener(e -> viewPatientPrescriptions());
+
 
         JPanel buttons = new JPanel();
         buttons.add(addBtn);
         buttons.add(editBtn);
         buttons.add(deleteBtn);
         buttons.add(viewBtn);
+        buttons.add(prescriptionsBtn);
 
         panel.add(new JScrollPane(patientTable), BorderLayout.CENTER);
         panel.add(buttons, BorderLayout.SOUTH);
@@ -475,6 +480,62 @@ private void viewPatient() {
     );
 }
 
+private void viewPatientPrescriptions() {
+
+    int row = patientTable.getSelectedRow();
+    if (row == -1) {
+        JOptionPane.showMessageDialog(this, "Please select a patient first.");
+        return;
+    }
+
+    String patientNhs = patientTableModel.getValueAt(row, 0).toString();
+
+    try {
+        prescriptionRepository.load("data/prescriptions.csv");
+
+        StringBuilder details = new StringBuilder();
+        details.append("PRESCRIPTIONS FOR PATIENT: ").append(patientNhs).append("\n");
+        details.append("====================================\n\n");
+
+        boolean found = false;
+
+        for (Prescription p : prescriptionRepository.getAll()) {
+            if (p.getPatientNhsNumber().equals(patientNhs)) {
+
+                found = true;
+
+                details.append("Prescription ID: ").append(p.getPrescriptionId()).append("\n");
+                details.append("Clinician ID: ").append(p.getClinicianId()).append("\n");
+                details.append("Medication: ").append(p.getMedication()).append("\n");
+                details.append("Dosage: ").append(p.getDosage()).append("\n");
+                details.append("Pharmacy: ").append(p.getPharmacy()).append("\n");
+                details.append("Status: ").append(p.getCollectionStatus()).append("\n");
+                details.append("------------------------------------\n");
+            }
+        }
+
+        if (!found) {
+            details.append("No prescriptions found for this patient.");
+        }
+
+        JTextArea textArea = new JTextArea(details.toString(), 20, 60);
+        textArea.setEditable(false);
+        textArea.setLineWrap(true);
+        textArea.setWrapStyleWord(true);
+
+        JScrollPane scrollPane = new JScrollPane(textArea);
+
+        JOptionPane.showMessageDialog(
+                this,
+                scrollPane,
+                "Patient Prescriptions",
+                JOptionPane.INFORMATION_MESSAGE
+        );
+
+    } catch (Exception ex) {
+        showError(ex);
+    }
+}
 
 
     /**
@@ -574,34 +635,73 @@ private void viewPatient() {
         }
     }
 
-    private void addClinician() {
-        try {
-            String id = promptRequired("Clinician ID");
-            if (id == null) return;
+private void addClinician() {
 
-            String name = promptRequired("Full Name");
-            if (name == null) return;
+    // Create form fields
+    JTextField idField = new JTextField();
+    JTextField nameField = new JTextField();
 
-            String role = promptRequired("Role (Doctor/Nurse/Specialist)");
-            if (role == null) return;
+    // ✅ Dropdown instead of text field
+    JComboBox<String> roleCombo = new JComboBox<>(new String[]{
+            "GP",
+            "Consultant",
+            "Senior Nurse",
+            "Practice Nurse",
+            "Staff Nurse",
+            "Specialist"
+    });
 
-            String specialty = promptRequired("Specialty");
-            if (specialty == null) return;
+    JTextField specialtyField = new JTextField();
+    JTextField staffCodeField = new JTextField();
 
-            String workplace = promptRequired("Workplace");
-            if (workplace == null) return;
+    // Build form panel
+    JPanel panel = new JPanel();
+    panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 
-            Clinician c = new Clinician(id, name, role, specialty, workplace);
+    panel.add(new JLabel("Clinician ID"));
+    panel.add(idField);
 
-            clinicianRepository.add(c);
-            loadClinicians();
+    panel.add(new JLabel("Full Name"));
+    panel.add(nameField);
 
-            JOptionPane.showMessageDialog(this, "Clinician added successfully.");
+    panel.add(new JLabel("Role"));
+    panel.add(roleCombo);
 
-        } catch (Exception ex) {
-            showError(ex);
-        }
+    panel.add(new JLabel("Specialty"));
+    panel.add(specialtyField);
+
+    panel.add(new JLabel("Staff Code"));
+    panel.add(staffCodeField);
+
+    int result = JOptionPane.showConfirmDialog(
+            this,
+            panel,
+            "Add Clinician",
+            JOptionPane.OK_CANCEL_OPTION,
+            JOptionPane.PLAIN_MESSAGE
+    );
+
+    if (result != JOptionPane.OK_OPTION) return;
+
+    try {
+        Clinician clinician = new Clinician(
+                idField.getText().trim(),
+                nameField.getText().trim(),
+                roleCombo.getSelectedItem().toString(), // ✅ from dropdown
+                specialtyField.getText().trim(),
+                staffCodeField.getText().trim()
+        );
+
+        clinicianRepository.add(clinician);
+        loadClinicians();
+
+        JOptionPane.showMessageDialog(this, "Clinician added successfully.");
+
+    } catch (Exception ex) {
+        showError(ex);
     }
+}
+
 
     private void viewClinician() {
 
@@ -651,38 +751,102 @@ private void viewPatient() {
 
 
     private void editClinician() {
-        int row = clinicianTable.getSelectedRow();
-        if (row == -1) {
-            JOptionPane.showMessageDialog(this, "Select a clinician row first.");
-            return;
-        }
 
-        try {
-            String id = clinicianTableModel.getValueAt(row, 0).toString();
-
-            String name = promptRequiredDefault("Full Name", clinicianTableModel.getValueAt(row, 1).toString());
-            if (name == null) return;
-
-            String role = promptRequiredDefault("Role", clinicianTableModel.getValueAt(row, 2).toString());
-            if (role == null) return;
-
-            String specialty = promptRequiredDefault("Specialty", clinicianTableModel.getValueAt(row, 3).toString());
-            if (specialty == null) return;
-
-            String workplace = promptRequiredDefault("Workplace", clinicianTableModel.getValueAt(row, 4).toString());
-            if (workplace == null) return;
-
-            Clinician updated = new Clinician(id, name, role, specialty, workplace);
-
-            clinicianRepository.update(updated);
-            loadClinicians();
-
-            JOptionPane.showMessageDialog(this, "Clinician updated successfully.");
-
-        } catch (Exception ex) {
-            showError(ex);
-        }
+    int row = clinicianTable.getSelectedRow();
+    if (row == -1) {
+        JOptionPane.showMessageDialog(this, "Please select a clinician first.");
+        return;
     }
+
+    // Existing values from table
+    String clinicianId = clinicianTableModel.getValueAt(row, 0).toString();
+    String name = clinicianTableModel.getValueAt(row, 1).toString();
+    String role = clinicianTableModel.getValueAt(row, 2).toString();
+    String specialty = clinicianTableModel.getValueAt(row, 3).toString();
+    String staffCode = clinicianTableModel.getValueAt(row, 4).toString();
+
+    // Create fields (pre-filled)
+    JTextField idField = new JTextField(clinicianId);
+    idField.setEditable(false); // ID should not change
+
+    JTextField nameField = new JTextField(name);
+
+    JComboBox<String> roleCombo = new JComboBox<>(new String[]{
+            "GP",
+            "Consultant",
+            "Senior Nurse",
+            "Practice Nurse",
+            "Staff Nurse",
+            "Specialist"
+    });
+    roleCombo.setSelectedItem(role);
+
+    JTextField specialtyField = new JTextField(specialty);
+    JTextField staffCodeField = new JTextField(staffCode);
+
+    // Build form panel
+    JPanel panel = new JPanel();
+    panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+
+    panel.add(new JLabel("Clinician ID"));
+    panel.add(idField);
+
+    panel.add(new JLabel("Full Name"));
+    panel.add(nameField);
+
+    panel.add(new JLabel("Role"));
+    panel.add(roleCombo);
+
+    panel.add(new JLabel("Specialty"));
+    panel.add(specialtyField);
+
+    panel.add(new JLabel("Staff Code"));
+    panel.add(staffCodeField);
+
+    int result = JOptionPane.showConfirmDialog(
+            this,
+            panel,
+            "Edit Clinician",
+            JOptionPane.OK_CANCEL_OPTION,
+            JOptionPane.PLAIN_MESSAGE
+    );
+
+    if (result != JOptionPane.OK_OPTION) return;
+
+    // VALIDATION: prevent empty fields
+if (nameField.getText().trim().isEmpty() ||
+    specialtyField.getText().trim().isEmpty() ||
+    staffCodeField.getText().trim().isEmpty()) {
+
+    JOptionPane.showMessageDialog(
+            this,
+            "All fields must be filled in.",
+            "Validation Error",
+            JOptionPane.WARNING_MESSAGE
+    );
+    return;
+}
+
+
+    try {
+        Clinician updated = new Clinician(
+                clinicianId,
+                nameField.getText().trim(),
+                roleCombo.getSelectedItem().toString(),
+                specialtyField.getText().trim(),
+                staffCodeField.getText().trim()
+        );
+
+        clinicianRepository.update(updated);
+        loadClinicians();
+
+        JOptionPane.showMessageDialog(this, "Clinician updated successfully.");
+
+    } catch (Exception ex) {
+        showError(ex);
+    }
+}
+
 
     private void deleteClinician() {
         int row = clinicianTable.getSelectedRow();
