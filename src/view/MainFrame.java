@@ -144,16 +144,22 @@ public class MainFrame extends JFrame {
 
         // Table model column order should match what you want displayed
         patientTableModel = new DefaultTableModel(
-                new String[]{
-                        "NHS Number",
-                        "First Name",
-                        "Last Name",
-                        "Date of Birth",
-                        "Phone Number",
-                        "Gender",
-                        "Registered GP Surgery"
-                }, 0
-        );
+            new String[]{
+                "NHS Number",
+                "First Name",
+                "Last Name",
+                "Date of Birth",
+                "Phone Number",
+                "Emergency Contact",
+                "Gender",
+                "Address",
+                "Postcode",
+                "Email",
+                "Registered GP Surgery"
+         }, 0
+);
+
+
 
         patientTable = new JTable(patientTableModel);
         patientTable.setPreferredScrollableViewportSize(new Dimension(1200, 450));
@@ -197,16 +203,21 @@ public class MainFrame extends JFrame {
 
             // Populate UI from repository objects
             for (Patient p : patientRepository.getAll()) {
-                patientTableModel.addRow(new Object[]{
-                        p.getNhsNumber(),
-                        p.getFirstName(),
-                        p.getLastName(),
-                        p.getDateOfBirth(),
-                        p.getPhoneNumber(),
-                        p.getGender(),
-                        p.getRegisteredGpSurgery()
-                });
-            }
+    patientTableModel.addRow(new Object[]{
+            p.getNhsNumber(),
+            p.getFirstName(),
+            p.getLastName(),
+            p.getDateOfBirth(),
+            p.getPhoneNumber(),
+            p.getEmergencyContactNumber(),
+            p.getGender(),
+            p.getAddress(),
+            p.getPostcode(),
+            p.getEmail(),
+            p.getRegisteredGpSurgery()
+    });
+}
+
 
         } catch (Exception ex) {
             showError(ex);
@@ -220,70 +231,177 @@ public class MainFrame extends JFrame {
      * - Call repository add (persists to CSV)
      * - Reload table
      */
-    private void addPatient() {
-        try {
-            String nhs = promptRequired("NHS Number");
-            if (nhs == null) return;
+  private void addPatient() {
 
-            String first = promptRequired("First Name");
-            if (first == null) return;
+    // Create form fields
+    JTextField nhsField = new JTextField();
+    JTextField firstNameField = new JTextField();
+    JTextField lastNameField = new JTextField();
+    JTextField dobField = new JTextField();
+    JTextField phoneField = new JTextField();
+    JTextField emergencyField = new JTextField();
+    JTextField genderField = new JTextField();
+    JTextField addressField = new JTextField();
+    JTextField postcodeField = new JTextField();
+    JTextField emailField = new JTextField();
+    JTextField gpField = new JTextField();
 
-            String last = promptRequired("Last Name");
-            if (last == null) return;
+    // Build form panel
+    JPanel panel = new JPanel();
+    panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 
-            String dob = promptRequired("Date of Birth (YYYY-MM-DD)");
-            if (dob == null) return;
+    panel.add(new JLabel("NHS Number"));
+    panel.add(nhsField);
 
-            String phone = promptRequired("Phone Number");
-            if (phone == null) return;
+    panel.add(new JLabel("First Name"));
+    panel.add(firstNameField);
 
-            String gender = promptRequired("Gender (M/F)");
-            if (gender == null) return;
+    panel.add(new JLabel("Last Name"));
+    panel.add(lastNameField);
 
-            String gp = promptRequired("Registered GP Surgery");
-            if (gp == null) return;
+    panel.add(new JLabel("Date of Birth (YYYY-MM-DD)"));
+    panel.add(dobField);
 
-            // IMPORTANT: This must match your Patient constructor
-            Patient newPatient = new Patient(nhs, first, last, dob, phone, gender, gp);
+    panel.add(new JLabel("Phone Number"));
+    panel.add(phoneField);
 
-            patientRepository.addPatient(newPatient);
+    panel.add(new JLabel("Emergency Contact Number"));
+    panel.add(emergencyField);
 
-            // Refresh UI
-            loadPatients();
+    panel.add(new JLabel("Gender"));
+    panel.add(genderField);
 
-            JOptionPane.showMessageDialog(this, "Patient added successfully.");
+    panel.add(new JLabel("Address"));
+    panel.add(addressField);
 
-        } catch (Exception ex) {
-            showError(ex);
-        }
+    panel.add(new JLabel("Postcode"));
+    panel.add(postcodeField);
+
+    panel.add(new JLabel("Email Address"));
+    panel.add(emailField);
+
+    panel.add(new JLabel("Registered GP Surgery"));
+    panel.add(gpField);
+
+    int result = JOptionPane.showConfirmDialog(
+            this,
+            panel,
+            "Add Patient",
+            JOptionPane.OK_CANCEL_OPTION,
+            JOptionPane.PLAIN_MESSAGE
+    );
+
+    if (result != JOptionPane.OK_OPTION) return;
+
+    try {
+        Patient newPatient = new Patient(
+                nhsField.getText().trim(),
+                firstNameField.getText().trim(),
+                lastNameField.getText().trim(),
+                dobField.getText().trim(),
+                phoneField.getText().trim(),
+                emergencyField.getText().trim(),
+                genderField.getText().trim(),
+                addressField.getText().trim(),
+                postcodeField.getText().trim(),
+                emailField.getText().trim(),
+                gpField.getText().trim()
+        );
+
+        patientRepository.addPatient(newPatient);
+        loadPatients();
+
+        JOptionPane.showMessageDialog(this, "Patient added successfully.");
+
+    } catch (Exception ex) {
+        showError(ex);
     }
+}
 
-    private void editPatient() {
+
+private void editPatient() {
 
     int row = patientTable.getSelectedRow();
     if (row == -1) {
-        JOptionPane.showMessageDialog(this, "Select a patient first.");
+        JOptionPane.showMessageDialog(this, "Please select a patient first.");
         return;
     }
 
+    // Create form fields (pre-filled from table)
+    JTextField nhsField = new JTextField(patientTableModel.getValueAt(row, 0).toString());
+    nhsField.setEditable(false);
+
+    JTextField firstNameField = new JTextField(patientTableModel.getValueAt(row, 1).toString());
+    JTextField lastNameField = new JTextField(patientTableModel.getValueAt(row, 2).toString());
+    JTextField dobField = new JTextField(patientTableModel.getValueAt(row, 3).toString());
+    JTextField phoneField = new JTextField(patientTableModel.getValueAt(row, 4).toString());
+    JTextField emergencyField = new JTextField(patientTableModel.getValueAt(row, 5).toString());
+    JTextField genderField = new JTextField(patientTableModel.getValueAt(row, 6).toString());
+    JTextField addressField = new JTextField(patientTableModel.getValueAt(row, 7).toString());
+    JTextField postcodeField = new JTextField(patientTableModel.getValueAt(row, 8).toString());
+    JTextField emailField = new JTextField(patientTableModel.getValueAt(row, 9).toString());
+    JTextField gpField = new JTextField(patientTableModel.getValueAt(row, 10).toString());
+
+    // Build form panel
+    JPanel panel = new JPanel();
+    panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+
+    panel.add(new JLabel("NHS Number"));
+    panel.add(nhsField);
+
+    panel.add(new JLabel("First Name"));
+    panel.add(firstNameField);
+
+    panel.add(new JLabel("Last Name"));
+    panel.add(lastNameField);
+
+    panel.add(new JLabel("Date of Birth (YYYY-MM-DD)"));
+    panel.add(dobField);
+
+    panel.add(new JLabel("Phone Number"));
+    panel.add(phoneField);
+
+    panel.add(new JLabel("Emergency Contact Number"));
+    panel.add(emergencyField);
+
+    panel.add(new JLabel("Gender"));
+    panel.add(genderField);
+
+    panel.add(new JLabel("Address"));
+    panel.add(addressField);
+
+    panel.add(new JLabel("Postcode"));
+    panel.add(postcodeField);
+
+    panel.add(new JLabel("Email"));
+    panel.add(emailField);
+
+    panel.add(new JLabel("Registered GP Surgery"));
+    panel.add(gpField);
+
+    int result = JOptionPane.showConfirmDialog(
+            this,
+            panel,
+            "Edit Patient",
+            JOptionPane.OK_CANCEL_OPTION,
+            JOptionPane.PLAIN_MESSAGE
+    );
+
+    if (result != JOptionPane.OK_OPTION) return;
+
     try {
-        String nhs = patientTableModel.getValueAt(row, 0).toString();
-
-        String first = promptRequiredDefault("First Name", patientTableModel.getValueAt(row, 1).toString());
-        String last = promptRequiredDefault("Last Name", patientTableModel.getValueAt(row, 2).toString());
-        String dob = promptRequiredDefault("Date of Birth", patientTableModel.getValueAt(row, 3).toString());
-        String phone = promptRequiredDefault("Phone Number", patientTableModel.getValueAt(row, 4).toString());
-        String gender = promptRequiredDefault("Gender", patientTableModel.getValueAt(row, 5).toString());
-        String gp = promptRequiredDefault("Registered GP Surgery", patientTableModel.getValueAt(row, 6).toString());
-
         Patient updated = new Patient(
-                nhs,
-                first,
-                last,
-                dob,
-                phone,
-                gender,
-                gp
+                nhsField.getText().trim(),
+                firstNameField.getText().trim(),
+                lastNameField.getText().trim(),
+                dobField.getText().trim(),
+                phoneField.getText().trim(),
+                emergencyField.getText().trim(),
+                genderField.getText().trim(),
+                addressField.getText().trim(),
+                postcodeField.getText().trim(),
+                emailField.getText().trim(),
+                gpField.getText().trim()
         );
 
         patientRepository.updatePatient(updated);
@@ -291,10 +409,11 @@ public class MainFrame extends JFrame {
 
         JOptionPane.showMessageDialog(this, "Patient updated successfully.");
 
-    } catch (Exception e) {
-        showError(e);
+    } catch (Exception ex) {
+        showError(ex);
     }
 }
+
 
 private void viewPatient() {
 
@@ -323,19 +442,30 @@ private void viewPatient() {
     details.append("Phone Number: ")
            .append(patientTableModel.getValueAt(row, 4)).append("\n");
 
-    details.append("Gender: ")
+    details.append("Emergency Contact: ")
            .append(patientTableModel.getValueAt(row, 5)).append("\n");
 
-    details.append("Registered GP Surgery: ")
+    details.append("Gender: ")
            .append(patientTableModel.getValueAt(row, 6)).append("\n");
 
-    JTextArea textArea = new JTextArea(details.toString());
+    details.append("Address: ")
+           .append(patientTableModel.getValueAt(row, 7)).append("\n");
+
+    details.append("Postcode: ")
+           .append(patientTableModel.getValueAt(row, 8)).append("\n");
+
+    details.append("Email: ")
+           .append(patientTableModel.getValueAt(row, 9)).append("\n");
+
+    details.append("Registered GP Surgery: ")
+           .append(patientTableModel.getValueAt(row, 10)).append("\n");
+
+    JTextArea textArea = new JTextArea(details.toString(), 18, 50);
     textArea.setEditable(false);
     textArea.setLineWrap(true);
     textArea.setWrapStyleWord(true);
 
     JScrollPane scrollPane = new JScrollPane(textArea);
-    scrollPane.setPreferredSize(new Dimension(400, 300));
 
     JOptionPane.showMessageDialog(
             this,
@@ -344,6 +474,7 @@ private void viewPatient() {
             JOptionPane.INFORMATION_MESSAGE
     );
 }
+
 
 
     /**

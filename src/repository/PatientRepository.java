@@ -45,39 +45,53 @@ public class PatientRepository {
     /**
      * Loads patient records from a CSV file into memory.
      *
+     * Expected CSV format:
+     * nhsNumber,firstName,lastName,dateOfBirth,phoneNumber,gender,registeredGpSurgery
+     *
      * @param filePath path to patients.csv (e.g. "data/patients.csv")
      * @throws IOException if file cannot be read
      */
-public void load(String filePath) throws IOException {
+    public void load(String filePath) throws IOException {
 
-    patients.clear();
+        this.sourceFilePath = filePath; // ✅ FIX: required for saveToCsv()
 
-    try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+        patients.clear();
+        patientByNhs.clear();
 
-        String header = br.readLine(); // skip header
-        if (header == null) return;
+        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
 
-        String line;
-        while ((line = br.readLine()) != null) {
+            String header = br.readLine(); // skip header
+            if (header == null) return;
 
-            String[] cols = line.split(",", -1);
+            String line;
+            while ((line = br.readLine()) != null) {
 
-            if (cols.length < 7) continue; // must match CSV
+                if (line.trim().isEmpty()) continue;
 
-            Patient p = new Patient(
-                    cols[0].trim(), // NHS
-                    cols[1].trim(), // First name
-                    cols[2].trim(), // Last name
-                    cols[3].trim(), // DOB
-                    cols[4].trim(), // Phone
-                    cols[5].trim(), // Gender ✅
-                    cols[6].trim()  // GP Surgery ✅
-            );
+                String[] cols = line.split(",", -1);
 
-            patients.add(p);
+                // Must match CSV structure exactly
+                if (cols.length < 7) continue;
+
+        Patient p = new Patient(
+                cols[0].trim(),  // NHS
+                cols[1].trim(),  // First
+                cols[2].trim(),  // Last
+                cols[3].trim(),  // DOB
+                cols[4].trim(),  // Phone
+                cols[5].trim(),  // Emergency Contact
+                cols[6].trim(),  // Gender
+                cols[7].trim(),  // Address
+                cols[8].trim(),  // Postcode
+                cols[9].trim(),  // Email
+                cols[10].trim()  // GP Surgery
+);
+
+                patients.add(p);
+                patientByNhs.put(p.getNhsNumber(), p); // ✅ FIX: keep map in sync
+            }
         }
     }
-}
 
     /**
      * Returns a copy of all loaded patients.
@@ -122,35 +136,33 @@ public void load(String filePath) throws IOException {
     }
 
     /**
- * Updates an existing patient based on NHS number.
- *
- * @param updatedPatient the patient with updated details
- */
-public void updatePatient(Patient updatedPatient) throws IOException {
+     * Updates an existing patient based on NHS number.
+     *
+     * @param updatedPatient the patient with updated details
+     */
+    public void updatePatient(Patient updatedPatient) throws IOException {
 
-    boolean found = false;
+        boolean found = false;
 
-    for (int i = 0; i < patients.size(); i++) {
-        Patient existing = patients.get(i);
+        for (int i = 0; i < patients.size(); i++) {
+            Patient existing = patients.get(i);
 
-        // NHS number is the primary key
-        if (existing.getNhsNumber()
-                .equalsIgnoreCase(updatedPatient.getNhsNumber())) {
+            if (existing.getNhsNumber()
+                    .equalsIgnoreCase(updatedPatient.getNhsNumber())) {
 
-            patients.set(i, updatedPatient);
-            found = true;
-            break;
+                patients.set(i, updatedPatient);
+                patientByNhs.put(updatedPatient.getNhsNumber(), updatedPatient);
+                found = true;
+                break;
+            }
         }
+
+        if (!found) {
+            throw new IllegalArgumentException("Patient not found.");
+        }
+
+        saveToCsv();
     }
-
-    if (!found) {
-        throw new IllegalArgumentException("Patient not found.");
-    }
-
-    // Persist changes back to CSV
-    saveToCsv();
-}
-
 
     /**
      * Deletes a patient using their NHS number and persists the change.
@@ -163,10 +175,9 @@ public void updatePatient(Patient updatedPatient) throws IOException {
         if (nhsNumber == null || nhsNumber.isBlank()) return;
 
         Patient removed = patientByNhs.remove(nhsNumber);
-        if (removed == null) return; // Nothing to delete
+        if (removed == null) return;
 
         patients.remove(removed);
-
         saveToCsv();
     }
 
@@ -191,7 +202,6 @@ public void updatePatient(Patient updatedPatient) throws IOException {
 
     /**
      * Writes all in-memory patient records back to the original CSV file.
-     * This ensures that create, update, and delete operations persist.
      *
      * @throws IOException if file cannot be written
      */
@@ -203,19 +213,27 @@ public void updatePatient(Patient updatedPatient) throws IOException {
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(sourceFilePath))) {
 
-            // CSV header must match original patients.csv format
-            writer.write("nhsNumber,firstName,lastName,dateOfBirth,phoneNumber,registeredGpSurgery");
+            // ✅ FIXED header to match load()
+            writer.write("nhsNumber,firstName,lastName,dateOfBirth,phoneNumber,"+"emergencyContactNumber,gender,address,postcode,email,registeredGpSurgery"
+);
+
             writer.newLine();
 
             for (Patient p : patients) {
-                writer.write(String.join(",",
-                        safe(p.getNhsNumber()),
-                        safe(p.getFirstName()),
-                        safe(p.getLastName()),
-                        safe(p.getDateOfBirth()),
-                        safe(p.getPhoneNumber()),
-                        safe(p.getGender())
-                ));
+               writer.write(String.join(",",
+                    safe(p.getNhsNumber()),
+                    safe(p.getFirstName()),
+                    safe(p.getLastName()),
+                    safe(p.getDateOfBirth()),
+                    safe(p.getPhoneNumber()),
+                    safe(p.getEmergencyContactNumber()),
+                    safe(p.getGender()),
+                    safe(p.getAddress()),
+                    safe(p.getPostcode()),
+                    safe(p.getEmail()),
+                    safe(p.getRegisteredGpSurgery())
+));
+
                 writer.newLine();
             }
         }

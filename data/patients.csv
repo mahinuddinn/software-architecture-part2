@@ -1,11 +1,11 @@
-nhsNumber,firstName,lastName,dateOfBirth,phoneNumber,gender, registeredGpSurgery
-P001,John,Smith,1985-03-15,1234567890,M,Conway Medical Centre
-P002,Emma,Johnson,1990-07-22,2345678901,F, Kingsway Health Centre
-P003,Robert,Williams,1975-11-08,3456789012,M, Blenheim Surgery
-P004,Sarah,Brown,1988-09-14,4567890123,F, Watford Gap Medical Practice
-P005,Michael,Davis,1982-12-03,5678901234,M, Bellhouse Medical Centre
-P006,Linda,Miller,1978-04-27,6789012345,F, Bellhouse Medical Centre
-P007,James,Wilson,1992-01-19,7890123456,M, Harpenden Health Clinic
-P008,Patricia,Moore,1983-06-11,8901234567,F, Kingsway Health Centre
-P009,Christopher,Taylor,1979-10-05,9012345678,M, Blenheim Surgery
-P010,Elizabeth,Anderson,1987-08-30,0123456789,F, Conway Medical Centre
+nhsNumber,firstName,lastName,dateOfBirth,phoneNumber,emergencyContactNumber,gender,address,postcode,email,registeredGpSurgery
+P001,John,Smith,1985-03-15,1234567890,07111111111,M,12 High Street Watford,WD17 1AA,john.smith@email.com,Conway Medical Centre
+P002,Emma,Johnson,1990-07-22,2345678901,07222222222,F,45 Kingsway Road,WD18 2BB,emma.johnson@email.com,Kingsway Health Centre
+P003,Robert,Williams,1975-11-08,3456789012,07333333333,M,78 Blenheim Avenue,WD19 3CC,robert.williams@email.com,Blenheim Surgery
+P004,Sarah,Brown,1988-09-14,4567890123,07444444444,F,9 Market Street Watford,WD17 4DD,sarah.brown@email.com,Watford Gap Medical Practice
+P005,Michael,Davis,1982-12-03,5678901234,07555555555,M,22 Bellhouse Lane,WD18 5EE,michael.davis@email.com,Bellhouse Medical Centre
+P006,Linda,Miller,1978-04-27,6789012345,07666666666,F,31 Bellhouse Lane,WD18 5EE,linda.miller@email.com,Bellhouse Medical Centre
+P007,James,Wilson,1992-01-19,7890123456,07777777777,M,14 Highfield Road,AL5 1FF,james.wilson@email.com,Harpenden Health Clinic
+P008,Patricia,Moore,1983-06-11,8901234567,07888888888,F,6 Kingsway Road,WD18 2BB,patricia.moore@email.com,Kingsway Health Centre
+P009,Christopher,Taylor,1979-10-05,9012345678,07999999999,M,19 Blenheim Avenue,WD19 3CC,christopher.taylor@email.com,Blenheim Surgery
+P010,Elizabeth,Anderson,1987-08-30,0123456789,07000000000,F,3 High Street Watford,WD17 1AA,elizabeth.anderson@email.com,Conway Medical Centre
