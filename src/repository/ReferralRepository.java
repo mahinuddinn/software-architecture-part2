@@ -90,6 +90,41 @@ public class ReferralRepository {
         return new ArrayList<>(referrals);
     }
 
+    /**
+ * Finds a referral by referral ID.
+ */
+public Referral getReferralById(String referralId) {
+
+    for (Referral r : referrals) {
+        if (r.getReferralId().equalsIgnoreCase(referralId)) {
+            return r;
+        }
+    }
+    return null;
+}
+
+
+    /* =====================================================
+   CREATE
+   ===================================================== */
+
+/**
+ * Adds a new referral.
+ */
+public void addReferral(Referral referral) throws IOException {
+
+    // Prevent duplicate IDs
+    for (Referral r : referrals) {
+        if (r.getReferralId().equalsIgnoreCase(referral.getReferralId())) {
+            throw new IllegalArgumentException("Referral ID already exists.");
+        }
+    }
+
+    referrals.add(referral);
+    saveToCsv();
+}
+
+
     /* =====================================================
        UPDATE
        ===================================================== */
