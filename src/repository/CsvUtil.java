@@ -1,5 +1,16 @@
 package repository;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import model.Appointment;
+
+
 /**
  * CsvUtil
  * -------
@@ -60,4 +71,83 @@ public class CsvUtil {
             return defaultValue;
         }
     }
+
+    /**
+ * Reads appointments from appointments.csv and returns a list.
+ *
+ * Expected CSV header:
+ * appointmentId,patientId,clinicianId,facilityId,appointmentDate,appointmentTime,status,notes
+ */
+public static List<Appointment> readAppointments(String filePath) throws IOException {
+
+    List<Appointment> appointments = new ArrayList<>();
+
+    try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+
+        // Skip CSV header
+        br.readLine();
+
+        String line;
+        while ((line = br.readLine()) != null) {
+
+            // Keep empty trailing fields
+            String[] cols = line.split(",", -1);
+
+            if (cols.length < 8) continue;
+
+            Appointment appointment = new Appointment(
+                    cols[0].trim(), // appointmentId
+                    cols[1].trim(), // patientId
+                    cols[2].trim(), // clinicianId
+                    cols[3].trim(), // facilityId
+                    cols[4].trim(), // appointmentDate
+                    cols[5].trim(), // appointmentTime
+                    cols[6].trim(), // status
+                    cols[7].trim()  // notes
+            );
+
+            appointments.add(appointment);
+        }
+    }
+
+    return appointments;
+}
+
+/**
+ * Writes appointments back to appointments.csv.
+ */
+public static void writeAppointments(
+        String filePath,
+        List<Appointment> appointments
+) throws IOException {
+
+    try (BufferedWriter bw = new BufferedWriter(new FileWriter(filePath))) {
+
+        // Write CSV header
+        bw.write(
+                "appointmentId,patientId,clinicianId,facilityId," +
+                "appointmentDate,appointmentTime,status,notes"
+        );
+        bw.newLine();
+
+        // Write appointment records
+        for (Appointment a : appointments) {
+
+            bw.write(String.join(",",
+                    a.getAppointmentId(),
+                    a.getPatientId(),
+                    a.getClinicianId(),
+                    a.getFacilityId(),
+                    a.getAppointmentDate(),
+                    a.getAppointmentTime(),
+                    a.getStatus(),
+                    a.getNotes()
+            ));
+
+            bw.newLine();
+        }
+    }
+}
+
+
 }

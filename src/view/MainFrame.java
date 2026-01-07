@@ -1,6 +1,7 @@
 package view;
 
 import model.Patient;
+import model.Appointment;
 import model.Clinician;
 import model.Prescription;
 import model.Referral;
@@ -14,6 +15,7 @@ import repository.ReferralRepository;
 import repository.ReferralManager;
 import repository.StaffRepository;
 import repository.FacilityRepository;
+import repository.AppointmentRepository;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -60,6 +62,7 @@ public class MainFrame extends JFrame {
     private final ReferralRepository referralRepository;
     private final StaffRepository staffRepository;
     private final FacilityRepository facilityRepository;
+    private final AppointmentRepository appointmentRepository;
 
     /* =========================================================
        PATIENT TAB - TABLE + MODEL
@@ -102,6 +105,16 @@ public class MainFrame extends JFrame {
     private JTable facilityTable;
     private DefaultTableModel facilityTableModel;
 
+    /* =========================================================
+       APPOINTMENT TAB - TABLE + MODEL
+       ========================================================= */
+        // JTable used to display appointments
+        private JTable appointmentTable;
+
+        // Table model controlling appointment table data
+        private DefaultTableModel appointmentTableModel;    
+
+
     /**
      * Constructs the main application window.
      * - Initialise repositories
@@ -125,6 +138,8 @@ public class MainFrame extends JFrame {
         referralRepository = new ReferralRepository();
         staffRepository = new StaffRepository();
         facilityRepository = new FacilityRepository();
+        appointmentRepository = new AppointmentRepository();
+        
         
 
         // ---------- Build tabbed UI ----------
@@ -136,6 +151,7 @@ public class MainFrame extends JFrame {
         tabs.addTab("Referrals", createReferralPanel());
         tabs.addTab("Staff", createStaffPanel());
         tabs.addTab("Facilities", createFacilityPanel());
+        tabs.addTab("Appointments", createAppointmentPanel());
 
         add(tabs, BorderLayout.CENTER);
     }
@@ -1793,10 +1809,14 @@ private void showReferralForm(Referral existing) {
     /**
  * Shows a collective popup form for adding a Facility.
  */
+/**
+ * Displays a collective popup form for adding a Facility
+ * using dropdown menus for constrained fields.
+ */
 private void showFacilityForm() {
 
     // ==============================
-    // INPUT FIELDS (DECLARE FIRST)
+    // TEXT INPUT FIELDS
     // ==============================
     JTextField facilityIdField = new JTextField();
     JTextField facilityNameField = new JTextField();
@@ -1805,51 +1825,79 @@ private void showFacilityForm() {
     JTextField postcodeField = new JTextField();
     JTextField phoneField = new JTextField();
     JTextField emailField = new JTextField();
-    JTextField openingHoursField = new JTextField();
     JTextField managerNameField = new JTextField();
-    JTextField capacityField = new JTextField();
-    JTextField specialitiesField = new JTextField();
 
     // ==============================
-    // BUILD FORM PANEL
+    // DROPDOWN MENUS
+    // ==============================
+
+    // Opening Hours
+    JComboBox<String> openingHoursBox = new JComboBox<>(new String[] {
+            "Mon-Fri: 8:00-18:00",
+            "Mon-Fri: 8:30-17:30",
+            "Mon-Fri: 9:00-17:00",
+            "24/7 Emergency",
+            "24/7 Emergency, Outpatients: Mon-Fri 8:00-17:00",
+            "Outpatients Only: Mon-Fri 9:00-17:00"
+    });
+
+    // Capacity
+    JComboBox<Integer> capacityBox = new JComboBox<>(new Integer[] {
+            100, 250, 500, 800, 1000, 1200, 1500, 2000
+    });
+
+    // Specialities Offered
+    JComboBox<String> specialitiesBox = new JComboBox<>(new String[] {
+            "General Practice",
+            "General Practice|Vaccinations",
+            "General Practice|Vaccinations|Minor Surgery",
+            "Outpatients",
+            "Cardiology|Neurology|Emergency Medicine",
+            "Orthopaedics|Oncology",
+            "Paediatrics|Dermatology|Child Psychology",
+            "Mental Health Services"
+    });
+
+    // ==============================
+    // FORM LAYOUT
     // ==============================
     JPanel panel = new JPanel(new GridLayout(0, 2, 8, 8));
 
-    panel.add(new JLabel("Facility ID"));
+    panel.add(new JLabel("Facility ID:"));
     panel.add(facilityIdField);
 
-    panel.add(new JLabel("Facility Name"));
+    panel.add(new JLabel("Facility Name:"));
     panel.add(facilityNameField);
 
-    panel.add(new JLabel("Facility Type"));
+    panel.add(new JLabel("Facility Type:"));
     panel.add(facilityTypeField);
 
-    panel.add(new JLabel("Address"));
+    panel.add(new JLabel("Address:"));
     panel.add(addressField);
 
-    panel.add(new JLabel("Postcode"));
+    panel.add(new JLabel("Postcode:"));
     panel.add(postcodeField);
 
-    panel.add(new JLabel("Phone Number"));
+    panel.add(new JLabel("Phone Number:"));
     panel.add(phoneField);
 
-    panel.add(new JLabel("Email"));
+    panel.add(new JLabel("Email:"));
     panel.add(emailField);
 
-    panel.add(new JLabel("Opening Hours"));
-    panel.add(openingHoursField);
+    panel.add(new JLabel("Opening Hours:"));
+    panel.add(openingHoursBox);
 
-    panel.add(new JLabel("Manager Name"));
+    panel.add(new JLabel("Manager Name:"));
     panel.add(managerNameField);
 
-    panel.add(new JLabel("Capacity"));
-    panel.add(capacityField);
+    panel.add(new JLabel("Capacity:"));
+    panel.add(capacityBox);
 
-    panel.add(new JLabel("Specialities Offered"));
-    panel.add(specialitiesField);
+    panel.add(new JLabel("Specialities Offered:"));
+    panel.add(specialitiesBox);
 
     JScrollPane scrollPane = new JScrollPane(panel);
-    scrollPane.setPreferredSize(new Dimension(420, 360));
+    scrollPane.setPreferredSize(new Dimension(450, 420));
 
     int result = JOptionPane.showConfirmDialog(
             this,
@@ -1862,18 +1910,19 @@ private void showFacilityForm() {
     if (result != JOptionPane.OK_OPTION) return;
 
     // ==============================
-    // VALIDATE CAPACITY
+    // MULTI-FIELD VALIDATION
     // ==============================
-    int capacity;
-    try {
-        capacity = Integer.parseInt(capacityField.getText().trim());
-    } catch (NumberFormatException e) {
-        JOptionPane.showMessageDialog(
-                this,
-                "Capacity must be a valid number.",
-                "Invalid Input",
-                JOptionPane.WARNING_MESSAGE
-        );
+    if (showMissingFieldsPopup(
+            "Add Facility – Missing Information",
+            "Facility ID", facilityIdField.getText(),
+            "Facility Name", facilityNameField.getText(),
+            "Facility Type", facilityTypeField.getText(),
+            "Address", addressField.getText(),
+            "Postcode", postcodeField.getText(),
+            "Phone Number", phoneField.getText(),
+            "Email", emailField.getText(),
+            "Manager Name", managerNameField.getText()
+    )) {
         return;
     }
 
@@ -1888,17 +1937,26 @@ private void showFacilityForm() {
             postcodeField.getText().trim(),
             phoneField.getText().trim(),
             emailField.getText().trim(),
-            openingHoursField.getText().trim(),
+            openingHoursBox.getSelectedItem().toString(),
             managerNameField.getText().trim(),
-            capacity,
-            specialitiesField.getText().trim()
+            (Integer) capacityBox.getSelectedItem(),
+            specialitiesBox.getSelectedItem().toString()
     );
 
+    // ==============================
+    // SAVE + REFRESH
+    // ==============================
     try {
         facilityRepository.addFacility(facility);
         loadFacilities();
 
-        JOptionPane.showMessageDialog(this, "Facility added successfully.");
+        JOptionPane.showMessageDialog(
+                this,
+                "Facility added successfully.",
+                "Success",
+                JOptionPane.INFORMATION_MESSAGE
+        );
+
     } catch (Exception ex) {
         showError(ex);
     }
@@ -2804,79 +2862,196 @@ Facility f = new Facility(
 
 private void editFacility() {
 
+    // ==============================
+    // ENSURE A ROW IS SELECTED
+    // ==============================
     int row = facilityTable.getSelectedRow();
     if (row == -1) {
-        JOptionPane.showMessageDialog(this, "Select a facility first.");
+        JOptionPane.showMessageDialog(
+                this,
+                "Please select a facility to edit.",
+                "No Selection",
+                JOptionPane.WARNING_MESSAGE
+        );
         return;
     }
 
+    // ==============================
+    // PRE-FILLED TEXT FIELDS
+    // ==============================
+    JTextField facilityIdField = new JTextField(
+            facilityTableModel.getValueAt(row, 0).toString()
+    );
+    facilityIdField.setEditable(false); // ID must not change
+
+    JTextField facilityNameField = new JTextField(
+            facilityTableModel.getValueAt(row, 1).toString()
+    );
+
+    JTextField facilityTypeField = new JTextField(
+            facilityTableModel.getValueAt(row, 2).toString()
+    );
+
+    JTextField addressField = new JTextField(
+            facilityTableModel.getValueAt(row, 3).toString()
+    );
+
+    JTextField postcodeField = new JTextField(
+            facilityTableModel.getValueAt(row, 4).toString()
+    );
+
+    JTextField phoneField = new JTextField(
+            facilityTableModel.getValueAt(row, 5).toString()
+    );
+
+    JTextField emailField = new JTextField(
+            facilityTableModel.getValueAt(row, 6).toString()
+    );
+
+    JTextField managerNameField = new JTextField(
+            facilityTableModel.getValueAt(row, 8).toString()
+    );
+
+    // ==============================
+    // DROPDOWNS (PRE-SELECTED)
+    // ==============================
+
+    JComboBox<String> openingHoursBox = new JComboBox<>(new String[]{
+            "Mon-Fri: 8:00-18:00",
+            "Mon-Fri: 8:30-17:30",
+            "Mon-Fri: 9:00-17:00",
+            "24/7 Emergency",
+            "24/7 Emergency, Outpatients: Mon-Fri 8:00-17:00",
+            "Outpatients Only: Mon-Fri 9:00-17:00"
+    });
+    openingHoursBox.setSelectedItem(
+            facilityTableModel.getValueAt(row, 7).toString()
+    );
+
+    JComboBox<Integer> capacityBox = new JComboBox<>(new Integer[]{
+            100, 250, 500, 800, 1000, 1200, 1500, 2000
+    });
+    capacityBox.setSelectedItem(
+            Integer.parseInt(facilityTableModel.getValueAt(row, 9).toString())
+    );
+
+    JComboBox<String> specialitiesBox = new JComboBox<>(new String[]{
+            "General Practice",
+            "General Practice|Vaccinations",
+            "General Practice|Vaccinations|Minor Surgery",
+            "Outpatients",
+            "Cardiology|Neurology|Emergency Medicine",
+            "Orthopaedics|Oncology",
+            "Paediatrics|Dermatology|Child Psychology",
+            "Mental Health Services"
+    });
+    specialitiesBox.setSelectedItem(
+            facilityTableModel.getValueAt(row, 10).toString()
+    );
+
+    // ==============================
+    // FORM LAYOUT
+    // ==============================
+    JPanel panel = new JPanel(new GridLayout(0, 2, 8, 8));
+
+    panel.add(new JLabel("Facility ID:"));
+    panel.add(facilityIdField);
+
+    panel.add(new JLabel("Facility Name:"));
+    panel.add(facilityNameField);
+
+    panel.add(new JLabel("Facility Type:"));
+    panel.add(facilityTypeField);
+
+    panel.add(new JLabel("Address:"));
+    panel.add(addressField);
+
+    panel.add(new JLabel("Postcode:"));
+    panel.add(postcodeField);
+
+    panel.add(new JLabel("Phone Number:"));
+    panel.add(phoneField);
+
+    panel.add(new JLabel("Email:"));
+    panel.add(emailField);
+
+    panel.add(new JLabel("Opening Hours:"));
+    panel.add(openingHoursBox);
+
+    panel.add(new JLabel("Manager Name:"));
+    panel.add(managerNameField);
+
+    panel.add(new JLabel("Capacity:"));
+    panel.add(capacityBox);
+
+    panel.add(new JLabel("Specialities Offered:"));
+    panel.add(specialitiesBox);
+
+    JScrollPane scrollPane = new JScrollPane(panel);
+    scrollPane.setPreferredSize(new Dimension(450, 420));
+
+    int result = JOptionPane.showConfirmDialog(
+            this,
+            scrollPane,
+            "Edit Facility",
+            JOptionPane.OK_CANCEL_OPTION,
+            JOptionPane.PLAIN_MESSAGE
+    );
+
+    if (result != JOptionPane.OK_OPTION) return;
+
+    // ==============================
+    // MULTI-FIELD VALIDATION
+    // ==============================
+    if (showMissingFieldsPopup(
+            "Edit Facility – Missing Information",
+            "Facility Name", facilityNameField.getText(),
+            "Facility Type", facilityTypeField.getText(),
+            "Address", addressField.getText(),
+            "Postcode", postcodeField.getText(),
+            "Phone Number", phoneField.getText(),
+            "Email", emailField.getText(),
+            "Manager Name", managerNameField.getText()
+    )) {
+        return;
+    }
+
+    // ==============================
+    // CREATE UPDATED FACILITY
+    // ==============================
+    Facility updated = new Facility(
+            facilityIdField.getText().trim(),
+            facilityNameField.getText().trim(),
+            facilityTypeField.getText().trim(),
+            addressField.getText().trim(),
+            postcodeField.getText().trim(),
+            phoneField.getText().trim(),
+            emailField.getText().trim(),
+            openingHoursBox.getSelectedItem().toString(),
+            managerNameField.getText().trim(),
+            (Integer) capacityBox.getSelectedItem(),
+            specialitiesBox.getSelectedItem().toString()
+    );
+
+    // ==============================
+    // SAVE + REFRESH
+    // ==============================
     try {
-        Facility updated = new Facility(
-        facilityTableModel.getValueAt(row, 0).toString(), // facility_id
-
-        promptRequiredDefault(
-                "Facility Name",
-                facilityTableModel.getValueAt(row, 1).toString()
-        ),
-
-        promptRequiredDefault(
-                "Facility Type",
-                facilityTableModel.getValueAt(row, 2).toString()
-        ),
-
-        promptRequiredDefault(
-                "Address",
-                facilityTableModel.getValueAt(row, 3).toString()
-        ),
-
-        promptRequiredDefault(
-                "Postcode",
-                facilityTableModel.getValueAt(row, 4).toString()
-        ),
-
-        promptRequiredDefault(
-                "Phone Number",
-                facilityTableModel.getValueAt(row, 5).toString()
-        ),
-
-        promptRequiredDefault(
-                "Email",
-                facilityTableModel.getValueAt(row, 6).toString()
-        ),
-
-        promptRequiredDefault(
-                "Opening Hours",
-                facilityTableModel.getValueAt(row, 7).toString()
-        ),
-
-        promptRequiredDefault(
-                "Manager Name",
-                facilityTableModel.getValueAt(row, 8).toString()
-        ),
-
-        Integer.parseInt(
-                promptRequiredDefault(
-                        "Capacity",
-                        facilityTableModel.getValueAt(row, 9).toString()
-                )
-        ),
-
-        promptRequiredDefault(
-                "Specialities Offered",
-                facilityTableModel.getValueAt(row, 10).toString()
-        )
-);
-
-
         facilityRepository.updateFacility(updated);
         loadFacilities();
 
-        JOptionPane.showMessageDialog(this, "Facility updated successfully.");
+        JOptionPane.showMessageDialog(
+                this,
+                "Facility updated successfully.",
+                "Success",
+                JOptionPane.INFORMATION_MESSAGE
+        );
 
-    } catch (Exception e) {
-        showError(e);
+    } catch (Exception ex) {
+        showError(ex);
     }
 }
+
 
 
 private void deleteFacility() {
@@ -2894,6 +3069,379 @@ private void deleteFacility() {
         showError(e);
     }
 }
+
+/* =========================================================
+   APPOINTMENTS TAB
+   Expected CSV:
+   appointmentId,patientId,clinicianId,facilityId,appointmentDate,appointmentTime,status,notes
+   ========================================================= */
+
+private JPanel createAppointmentPanel() {
+
+    // ================================
+    // APPOINTMENTS TAB – UI SETUP
+    // ================================
+
+    JPanel appointmentPanel = new JPanel(new BorderLayout());
+
+    appointmentTableModel = new DefaultTableModel(
+            new String[]{
+                    "Appointment ID",
+                    "Patient ID",
+                    "Clinician ID",
+                    "Facility ID",
+                    "Appointment Date",
+                    "Appointment Time",
+                    "Status",
+                    "Notes"
+            }, 0
+    );
+
+    appointmentTable = new JTable(appointmentTableModel);
+    appointmentTable.setRowHeight(22);
+
+    appointmentPanel.add(new JScrollPane(appointmentTable), BorderLayout.CENTER);
+
+    // ================================
+    // LOAD APPOINTMENTS FROM CSV
+    // ================================
+    try {
+        appointmentRepository.load("data/appointments.csv");
+        appointmentTableModel.setRowCount(0);
+
+        for (Appointment a : appointmentRepository.getAll()) {
+            appointmentTableModel.addRow(new Object[]{
+                    a.getAppointmentId(),
+                    a.getPatientId(),
+                    a.getClinicianId(),
+                    a.getFacilityId(),
+                    a.getAppointmentDate(),
+                    a.getAppointmentTime(),
+                    a.getStatus(),
+                    a.getNotes()
+            });
+        }
+
+    } catch (Exception e) {
+        showError(e);
+    }
+
+    // ================================
+    // APPOINTMENT BUTTON PANEL
+    // ================================
+    JPanel buttons = new JPanel();
+
+    JButton addBtn = new JButton("Add Appointment");
+    JButton editBtn = new JButton("Edit Appointment");
+    JButton deleteBtn = new JButton("Delete Appointment");
+    JButton viewBtn = new JButton("View Appointment");
+
+    addBtn.addActionListener(e -> addAppointment());
+    editBtn.addActionListener(e -> editAppointment());
+    deleteBtn.addActionListener(e -> deleteAppointment());
+    viewBtn.addActionListener(e -> viewAppointment());
+
+    buttons.add(addBtn);
+    buttons.add(editBtn);
+    buttons.add(deleteBtn);
+    buttons.add(viewBtn);
+
+    appointmentPanel.add(buttons, BorderLayout.SOUTH);
+
+    return appointmentPanel;
+}
+
+/**
+ * View Appointment
+ * ----------------
+ * Displays all details of the selected appointment
+ * in a read-only, scrollable dialog.
+ *
+ * Matches the style of View Patient / View Prescription.
+ */
+private void viewAppointment() {
+
+    // Ensure a row is selected
+    int row = appointmentTable.getSelectedRow();
+    if (row == -1) {
+        JOptionPane.showMessageDialog(
+                this,
+                "Please select an appointment first.",
+                "No Selection",
+                JOptionPane.WARNING_MESSAGE
+        );
+        return;
+    }
+
+    // Build readable appointment details from table columns
+    StringBuilder details = new StringBuilder();
+    details.append("APPOINTMENT DETAILS\n");
+    details.append("========================\n\n");
+
+    details.append("Appointment ID: ")
+           .append(appointmentTableModel.getValueAt(row, 0)).append("\n");
+
+    details.append("Patient ID: ")
+           .append(appointmentTableModel.getValueAt(row, 1)).append("\n");
+
+    details.append("Clinician ID: ")
+           .append(appointmentTableModel.getValueAt(row, 2)).append("\n");
+
+    details.append("Facility ID: ")
+           .append(appointmentTableModel.getValueAt(row, 3)).append("\n\n");
+
+    details.append("Appointment Date: ")
+           .append(appointmentTableModel.getValueAt(row, 4)).append("\n");
+
+    details.append("Appointment Time: ")
+           .append(appointmentTableModel.getValueAt(row, 5)).append("\n");
+
+    details.append("Status: ")
+           .append(appointmentTableModel.getValueAt(row, 6)).append("\n\n");
+
+    details.append("Notes:\n")
+           .append(appointmentTableModel.getValueAt(row, 7));
+
+    // Text area for readability
+    JTextArea textArea = new JTextArea(details.toString(), 18, 55);
+    textArea.setEditable(false);
+    textArea.setLineWrap(true);
+    textArea.setWrapStyleWord(true);
+
+    JScrollPane scrollPane = new JScrollPane(textArea);
+
+    // Show popup
+    JOptionPane.showMessageDialog(
+            this,
+            scrollPane,
+            "View Appointment",
+            JOptionPane.INFORMATION_MESSAGE
+    );
+}
+
+/**
+ * Add Appointment
+ * ----------------
+ * Displays a collective popup form for creating a new appointment.
+ * - Uses dropdowns for constrained fields
+ * - Validates ALL required fields in one popup
+ * - Shows how many fields are missing and which ones
+ * - Persists data via AppointmentRepository
+ */
+private void addAppointment() {
+
+    // ==============================
+    // INPUT FIELDS
+    // ==============================
+
+    JTextField appointmentIdField = new JTextField();
+    JTextField patientIdField = new JTextField();
+    JTextField clinicianIdField = new JTextField();
+    JTextField facilityIdField = new JTextField();
+    JTextField appointmentDateField = new JTextField(); // YYYY-MM-DD
+    JTextField appointmentTimeField = new JTextField(); // HH:MM
+    JTextArea notesArea = new JTextArea(3, 20);
+
+    // Status dropdown improves data integrity
+    JComboBox<String> statusBox = new JComboBox<>(new String[] {
+            "New",
+            "Pending",
+            "Completed",
+            "Cancelled"
+    });
+
+    // ==============================
+    // FORM LAYOUT
+    // ==============================
+
+    JPanel panel = new JPanel(new GridLayout(0, 2, 8, 8));
+
+    panel.add(new JLabel("Appointment ID:"));
+    panel.add(appointmentIdField);
+
+    panel.add(new JLabel("Patient ID:"));
+    panel.add(patientIdField);
+
+    panel.add(new JLabel("Clinician ID:"));
+    panel.add(clinicianIdField);
+
+    panel.add(new JLabel("Facility ID:"));
+    panel.add(facilityIdField);
+
+    panel.add(new JLabel("Appointment Date (YYYY-MM-DD):"));
+    panel.add(appointmentDateField);
+
+    panel.add(new JLabel("Appointment Time (HH:MM):"));
+    panel.add(appointmentTimeField);
+
+    panel.add(new JLabel("Status:"));
+    panel.add(statusBox);
+
+    panel.add(new JLabel("Notes:"));
+    panel.add(new JScrollPane(notesArea));
+
+    // ==============================
+    // SHOW POPUP
+    // ==============================
+
+    JScrollPane scrollPane = new JScrollPane(panel);
+    scrollPane.setPreferredSize(new Dimension(450, 400));
+
+    int result = JOptionPane.showConfirmDialog(
+            this,
+            scrollPane,
+            "Add Appointment",
+            JOptionPane.OK_CANCEL_OPTION,
+            JOptionPane.PLAIN_MESSAGE
+    );
+
+    if (result != JOptionPane.OK_OPTION) return;
+
+    // ==============================
+    // MULTI-FIELD VALIDATION
+    // ==============================
+
+    List<String> missingFields = new ArrayList<>();
+
+    if (appointmentIdField.getText().trim().isEmpty())
+        missingFields.add("Appointment ID");
+
+    if (patientIdField.getText().trim().isEmpty())
+        missingFields.add("Patient ID");
+
+    if (clinicianIdField.getText().trim().isEmpty())
+        missingFields.add("Clinician ID");
+
+    if (facilityIdField.getText().trim().isEmpty())
+        missingFields.add("Facility ID");
+
+    if (appointmentDateField.getText().trim().isEmpty())
+        missingFields.add("Appointment Date");
+
+    if (appointmentTimeField.getText().trim().isEmpty())
+        missingFields.add("Appointment Time");
+
+    if (!missingFields.isEmpty()) {
+        JOptionPane.showMessageDialog(
+                this,
+                "Missing required fields (" + missingFields.size() + "):\n\n- "
+                        + String.join("\n- ", missingFields),
+                "Missing Information",
+                JOptionPane.ERROR_MESSAGE
+        );
+        return;
+    }
+
+    // ==============================
+    // CREATE APPOINTMENT OBJECT
+    // ==============================
+
+    try {
+        Appointment appointment = new Appointment(
+                appointmentIdField.getText().trim(),
+                patientIdField.getText().trim(),
+                clinicianIdField.getText().trim(),
+                facilityIdField.getText().trim(),
+                appointmentDateField.getText().trim(),
+                appointmentTimeField.getText().trim(),
+                statusBox.getSelectedItem().toString(),
+                notesArea.getText().trim()
+        );
+
+        // Persist via repository
+        appointmentRepository.addAppointment(appointment);
+
+        // Refresh appointments table
+        appointmentTableModel.addRow(new Object[]{
+                appointment.getAppointmentId(),
+                appointment.getPatientId(),
+                appointment.getClinicianId(),
+                appointment.getFacilityId(),
+                appointment.getAppointmentDate(),
+                appointment.getAppointmentTime(),
+                appointment.getStatus(),
+                appointment.getNotes()
+        });
+
+        JOptionPane.showMessageDialog(
+                this,
+                "Appointment added successfully.",
+                "Success",
+                JOptionPane.INFORMATION_MESSAGE
+        );
+
+    } catch (Exception ex) {
+        showError(ex);
+    }
+}
+
+/**
+ * Delete Appointment
+ * ------------------
+ * Deletes the selected appointment after user confirmation.
+ * - Requires a selected row
+ * - Confirms before deleting
+ * - Removes from repository and UI table
+ */
+private void deleteAppointment() {
+
+    // ==============================
+    // ENSURE A ROW IS SELECTED
+    // ==============================
+    int row = appointmentTable.getSelectedRow();
+    if (row == -1) {
+        JOptionPane.showMessageDialog(
+                this,
+                "Please select an appointment first.",
+                "No Selection",
+                JOptionPane.WARNING_MESSAGE
+        );
+        return;
+    }
+
+    // Get appointment ID from selected row
+    String appointmentId =
+            appointmentTableModel.getValueAt(row, 0).toString();
+
+    // ==============================
+    // CONFIRM DELETE
+    // ==============================
+    int confirm = JOptionPane.showConfirmDialog(
+            this,
+            "Delete appointment: " + appointmentId + "?",
+            "Confirm Delete",
+            JOptionPane.YES_NO_OPTION
+    );
+
+    if (confirm != JOptionPane.YES_OPTION) {
+        return;
+    }
+
+    // ==============================
+    // DELETE + REFRESH
+    // ==============================
+    try {
+        // Remove from repository (CSV persistence)
+        appointmentRepository.deleteAppointment(appointmentId);
+
+        // Remove from UI table
+        appointmentTableModel.removeRow(row);
+
+        JOptionPane.showMessageDialog(
+                this,
+                "Appointment deleted successfully.",
+                "Success",
+                JOptionPane.INFORMATION_MESSAGE
+        );
+
+    } catch (Exception ex) {
+        showError(ex);
+    }
+}
+
+
+
+
 
 
     /* =========================================================
@@ -2914,6 +3462,187 @@ private void deleteFacility() {
             JOptionPane.showMessageDialog(this, label + " is required.");
         }
     }
+
+    /**
+ * Edit Appointment
+ * ----------------
+ * Displays a collective popup form for editing an existing appointment.
+ * - Pre-fills all fields from the selected table row
+ * - Appointment ID is locked (primary identifier)
+ * - Validates ALL required fields in one popup
+ * - Shows how many fields are missing and which ones
+ */
+private void editAppointment() {
+
+    // ==============================
+    // ENSURE A ROW IS SELECTED
+    // ==============================
+    int row = appointmentTable.getSelectedRow();
+    if (row == -1) {
+        JOptionPane.showMessageDialog(
+                this,
+                "Please select an appointment first.",
+                "No Selection",
+                JOptionPane.WARNING_MESSAGE
+        );
+        return;
+    }
+
+    // ==============================
+    // PRE-FILLED INPUT FIELDS
+    // ==============================
+
+    JTextField appointmentIdField =
+            new JTextField(appointmentTableModel.getValueAt(row, 0).toString());
+    appointmentIdField.setEditable(false); // Identifier must not change
+
+    JTextField patientIdField =
+            new JTextField(appointmentTableModel.getValueAt(row, 1).toString());
+
+    JTextField clinicianIdField =
+            new JTextField(appointmentTableModel.getValueAt(row, 2).toString());
+
+    JTextField facilityIdField =
+            new JTextField(appointmentTableModel.getValueAt(row, 3).toString());
+
+    JTextField appointmentDateField =
+            new JTextField(appointmentTableModel.getValueAt(row, 4).toString());
+
+    JTextField appointmentTimeField =
+            new JTextField(appointmentTableModel.getValueAt(row, 5).toString());
+
+    JTextArea notesArea =
+            new JTextArea(appointmentTableModel.getValueAt(row, 7).toString(), 3, 20);
+
+    JComboBox<String> statusBox = new JComboBox<>(new String[]{
+            "New",
+            "Pending",
+            "Completed",
+            "Cancelled"
+    });
+    statusBox.setSelectedItem(
+            appointmentTableModel.getValueAt(row, 6).toString()
+    );
+
+    // ==============================
+    // FORM LAYOUT
+    // ==============================
+
+    JPanel panel = new JPanel(new GridLayout(0, 2, 8, 8));
+
+    panel.add(new JLabel("Appointment ID:"));
+    panel.add(appointmentIdField);
+
+    panel.add(new JLabel("Patient ID:"));
+    panel.add(patientIdField);
+
+    panel.add(new JLabel("Clinician ID:"));
+    panel.add(clinicianIdField);
+
+    panel.add(new JLabel("Facility ID:"));
+    panel.add(facilityIdField);
+
+    panel.add(new JLabel("Appointment Date (YYYY-MM-DD):"));
+    panel.add(appointmentDateField);
+
+    panel.add(new JLabel("Appointment Time (HH:MM):"));
+    panel.add(appointmentTimeField);
+
+    panel.add(new JLabel("Status:"));
+    panel.add(statusBox);
+
+    panel.add(new JLabel("Notes:"));
+    panel.add(new JScrollPane(notesArea));
+
+    // ==============================
+    // SHOW POPUP
+    // ==============================
+
+    JScrollPane scrollPane = new JScrollPane(panel);
+    scrollPane.setPreferredSize(new Dimension(450, 400));
+
+    int result = JOptionPane.showConfirmDialog(
+            this,
+            scrollPane,
+            "Edit Appointment",
+            JOptionPane.OK_CANCEL_OPTION,
+            JOptionPane.PLAIN_MESSAGE
+    );
+
+    if (result != JOptionPane.OK_OPTION) return;
+
+    // ==============================
+    // MULTI-FIELD VALIDATION
+    // ==============================
+
+    List<String> missingFields = new ArrayList<>();
+
+    if (patientIdField.getText().trim().isEmpty())
+        missingFields.add("Patient ID");
+
+    if (clinicianIdField.getText().trim().isEmpty())
+        missingFields.add("Clinician ID");
+
+    if (facilityIdField.getText().trim().isEmpty())
+        missingFields.add("Facility ID");
+
+    if (appointmentDateField.getText().trim().isEmpty())
+        missingFields.add("Appointment Date");
+
+    if (appointmentTimeField.getText().trim().isEmpty())
+        missingFields.add("Appointment Time");
+
+    if (!missingFields.isEmpty()) {
+        JOptionPane.showMessageDialog(
+                this,
+                "Missing required fields (" + missingFields.size() + "):\n\n- "
+                        + String.join("\n- ", missingFields),
+                "Missing Information",
+                JOptionPane.ERROR_MESSAGE
+        );
+        return;
+    }
+
+    // ==============================
+    // SAVE UPDATED APPOINTMENT
+    // ==============================
+
+    try {
+        Appointment updated = new Appointment(
+                appointmentIdField.getText().trim(),
+                patientIdField.getText().trim(),
+                clinicianIdField.getText().trim(),
+                facilityIdField.getText().trim(),
+                appointmentDateField.getText().trim(),
+                appointmentTimeField.getText().trim(),
+                statusBox.getSelectedItem().toString(),
+                notesArea.getText().trim()
+        );
+
+        // Persist update via repository
+        appointmentRepository.updateAppointment(updated);
+
+        // Refresh table row
+        appointmentTableModel.setValueAt(updated.getPatientId(), row, 1);
+        appointmentTableModel.setValueAt(updated.getClinicianId(), row, 2);
+        appointmentTableModel.setValueAt(updated.getFacilityId(), row, 3);
+        appointmentTableModel.setValueAt(updated.getAppointmentDate(), row, 4);
+        appointmentTableModel.setValueAt(updated.getAppointmentTime(), row, 5);
+        appointmentTableModel.setValueAt(updated.getStatus(), row, 6);
+        appointmentTableModel.setValueAt(updated.getNotes(), row, 7);
+
+        JOptionPane.showMessageDialog(
+                this,
+                "Appointment updated successfully.",
+                "Success",
+                JOptionPane.INFORMATION_MESSAGE
+        );
+
+    } catch (Exception ex) {
+        showError(ex);
+    }
+}
+
 
     /**
      * Prompt helper for required fields with default value prefilled.
@@ -3143,6 +3872,43 @@ private String generateNextReferralId() {
     }
     return "R" + String.format("%03d", max + 1);
 }
+
+/**
+ * Multi-field validation helper
+ * -----------------------------
+ * Shows ONE popup listing:
+ * - How many fields are missing
+ * - Exactly which fields are missing
+ */
+private boolean showMissingFieldsPopup(String title, String... fields) {
+
+    StringBuilder missing = new StringBuilder();
+    int count = 0;
+
+    // fields come in pairs: "Field Name", fieldValue
+    for (int i = 0; i < fields.length; i += 2) {
+        String fieldName = fields[i];
+        String fieldValue = fields[i + 1];
+
+        if (fieldValue == null || fieldValue.trim().isEmpty()) {
+            missing.append("- ").append(fieldName).append("\n");
+            count++;
+        }
+    }
+
+    if (count > 0) {
+        JOptionPane.showMessageDialog(
+                this,
+                "Missing required fields (" + count + "):\n\n" + missing,
+                title,
+                JOptionPane.WARNING_MESSAGE
+        );
+        return true; // validation FAILED
+    }
+
+    return false; // validation PASSED
+}
+
 
 
 

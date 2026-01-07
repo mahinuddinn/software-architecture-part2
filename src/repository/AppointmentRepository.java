@@ -2,8 +2,6 @@ package repository;
 
 import model.Appointment;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,75 +9,150 @@ import java.util.List;
 /**
  * AppointmentRepository
  * ---------------------
- * Loads appointment records from appointments.csv and stores them in memory.
+ * Responsible for loading, storing, updating, and persisting
+ * Appointment records.
  *
- * Appointments create an association between patients and clinicians
- * using NHS numbers and clinician IDs.
+ * This class represents the MODEL / DATA ACCESS layer
+ * in the MVC architecture.
+ *
+ * ✔ Handles CSV load/save
+ * ✔ Maintains in-memory list of appointments
+ * ✔ Provides CRUD methods used by MainFrame
+ * ✔ NO UI logic (Swing-free)
  */
 public class AppointmentRepository {
 
-    /**
-     * In-memory list of appointments.
-     */
+    /* =========================================================
+       IN-MEMORY DATA STORE
+       ========================================================= */
+
+    // List holding all appointments currently loaded
     private final List<Appointment> appointments = new ArrayList<>();
 
+    // Path to appointments CSV file
+    private String sourceFilePath;
+
+    /* =========================================================
+       LOAD
+       ========================================================= */
+
     /**
-     * Loads appointments from a CSV file.
-     *
-     * @param filePath path to appointments.csv (e.g. "data/appointments.csv")
-     * @throws IOException if file cannot be read
+     * Loads appointments from CSV into memory.
+     * This should be called ONCE at application startup.
      */
     public void load(String filePath) throws IOException {
 
+        this.sourceFilePath = filePath;
         appointments.clear();
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+        // Use CsvUtil to load appointments
+        appointments.addAll(
+                CsvUtil.readAppointments(filePath)
+        );
+    }
 
-            // Skip header row
-            String header = reader.readLine();
-            if (header == null) return;
+    /* =========================================================
+       READ
+       ========================================================= */
 
-            String line;
-            while ((line = reader.readLine()) != null) {
-
-                String[] cols = CsvUtil.splitCsvLine(line);
-
-                /*
-                 * Expected appointments.csv column order:
-                 * 0 = appointmentId
-                 * 1 = patientNhsNumber
-                 * 2 = clinicianId
-                 * 3 = dateTime
-                 * 4 = reason
-                 * 5 = status
-                 */
-                String appointmentId = CsvUtil.get(cols, 0);
-                String patientNhs = CsvUtil.get(cols, 1);
-                String clinicianId = CsvUtil.get(cols, 2);
-                String dateTime = CsvUtil.get(cols, 3);
-                String reason = CsvUtil.get(cols, 4);
-                String status = CsvUtil.get(cols, 5);
-
-                if (appointmentId.isEmpty()) continue;
-
-                Appointment appointment = new Appointment(
-                        appointmentId,
-                        patientNhs,
-                        clinicianId,
-                        dateTime,
-                        reason,
-                        status
-                );
-
-                appointments.add(appointment);
-            }
-        }
+    /**
+     * Returns ALL appointments currently loaded.
+     * Used by MainFrame to populate JTable.
+     */
+    public List<Appointment> getAll() {
+        return appointments;
     }
 
     /**
-     * Returns a copy of all loaded appointments.
+     * Finds a single appointment by Appointment ID.
      */
-    public List<Appointment> getAll() {
-        return new ArrayList<>(appointments);
+    public Appointment getById(String appointmentId) {
+
+        for (Appointment a : appointments) {
+            if (a.getAppointmentId().equals(appointmentId)) {
+                return a;
+            }
+        }
+        return null;
+    }
+
+    /* =========================================================
+       CREATE
+       ========================================================= */
+
+    /**
+     * Adds a new appointment and persists it to CSV.
+     */
+    public void addAppointment(Appointment appointment) throws IOException {
+
+        appointments.add(appointment);
+        save(); // persist to CSV
+    }
+
+    /* =========================================================
+       UPDATE
+       ========================================================= */
+
+    /**
+     * Updates an existing appointment based on Appointment ID.
+     */
+    public void updateAppointment(Appointment updated) throws IOException {
+
+        for (int i = 0; i < appointments.size(); i++) {
+
+            if (appointments.get(i).getAppointmentId()
+                    .equals(updated.getAppointmentId())) {
+
+                appointments.set(i, updated);
+                save(); // persist changes
+                return;
+            }
+        }
+
+        // Safety check (should never happen if UI is correct)
+        throw new IllegalArgumentException(
+                "Appointment not found: " + updated.getAppointmentId()
+        );
+    }
+
+    /* =========================================================
+       DELETE
+       ========================================================= */
+
+    /**
+     * Deletes an appointment by Appointment ID.
+     */
+    public void deleteAppointment(String appointmentId) throws IOException {
+
+        boolean removed = appointments.removeIf(
+                a -> a.getAppointmentId().equals(appointmentId)
+        );
+
+        if (!removed) {
+            throw new IllegalArgumentException(
+                    "Appointment not found: " + appointmentId
+            );
+        }
+
+        save(); // persist deletion
+    }
+
+    /* =========================================================
+       SAVE (CSV PERSISTENCE)
+       ========================================================= */
+
+    /**
+     * Writes the in-memory appointment list back to CSV.
+     */
+    private void save() throws IOException {
+
+        // Safety check
+        if (sourceFilePath == null) {
+            throw new IllegalStateException(
+                    "CSV file path not set. Did you forget to call load()?"
+            );
+        }
+
+        CsvUtil.writeAppointments(sourceFilePath, appointments);
     }
 }

@@ -3,69 +3,68 @@ package model;
 /**
  * Appointment
  * -----------
- * Represents an appointment between a patient and a clinician.
+ * Model class representing a single appointment record.
  *
- * This class establishes an association between Patient and Clinician
- * using their respective identifiers.
+ * This class maps directly to ONE row in appointments.csv.
+ * Each attribute corresponds to a CSV column.
+ *
+ * MVC Role:
+ * - MODEL: Holds appointment data only
+ * - Contains NO GUI logic
+ * - Contains NO file I/O
  */
 public class Appointment {
 
-    /** Unique appointment identifier */
+    // Unique identifier for the appointment
     private String appointmentId;
 
-    /** NHS number of the patient attending */
-    private String patientNhsNumber;
+    // Foreign key referencing Patient
+    private String patientId;
 
-    /** Clinician responsible for the appointment */
+    // Foreign key referencing Clinician
     private String clinicianId;
 
-    /** Date and time of the appointment */
-    private String dateTime;
+    // Foreign key referencing Facility
+    private String facilityId;
 
-    /** Reason for the visit */
-    private String reason;
+    // Date of appointment (YYYY-MM-DD)
+    private String appointmentDate;
 
-    /** Status (e.g. Scheduled, Completed, Cancelled) */
+    // Time of appointment (HH:MM)
+    private String appointmentTime;
+
+    // Status of appointment (New, Pending, In Progress, Completed)
     private String status;
 
+    // Additional notes or comments
+    private String notes;
+
     /**
-     * Constructs an Appointment object.
+     * Full constructor used when loading data from CSV
+     * or creating a new appointment from the GUI.
      */
-    public Appointment(String appointmentId,
-                       String patientNhsNumber,
-                       String clinicianId,
-                       String dateTime,
-                       String reason,
-                       String status) {
+    public Appointment(String appointmentId, String patientId, String clinicianId,
+                       String facilityId, String appointmentDate, String appointmentTime,
+                       String status, String notes) {
+
         this.appointmentId = appointmentId;
-        this.patientNhsNumber = patientNhsNumber;
+        this.patientId = patientId;
         this.clinicianId = clinicianId;
-        this.dateTime = dateTime;
-        this.reason = reason;
+        this.facilityId = facilityId;
+        this.appointmentDate = appointmentDate;
+        this.appointmentTime = appointmentTime;
         this.status = status;
+        this.notes = notes;
     }
 
-    public String getAppointmentId() {
-        return appointmentId;
-    }
+    // Getter methods (used by View & Repository)
 
-    public String getPatientNhsNumber() {
-        return patientNhsNumber;
-    }
-
-    public String getClinicianId() {
-        return clinicianId;
-    }
-
-    public String getDateTime() {
-        return dateTime;
-    }
-
-    public String getReason() {
-        return reason;
-    }
-
-    public String getStatus() {
-        return status;
-    }
+    public String getAppointmentId() { return appointmentId; }
+    public String getPatientId() { return patientId; }
+    public String getClinicianId() { return clinicianId; }
+    public String getFacilityId() { return facilityId; }
+    public String getAppointmentDate() { return appointmentDate; }
+    public String getAppointmentTime() { return appointmentTime; }
+    public String getStatus() { return status; }
+    public String getNotes() { return notes; }
 }
