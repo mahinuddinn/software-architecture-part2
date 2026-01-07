@@ -90,6 +90,31 @@ public void load(String filePath) throws IOException {
     }
 }
 
+/**
+ * Retrieves a Facility by its ID.
+ *
+ * Used for indirect lookups such as:
+ * Appointment → Facility (Part B)
+ *
+ * @param facilityId the facility identifier
+ * @return matching Facility or null if not found
+ */
+public Facility getById(String facilityId) {
+
+    // Safety check
+    if (facilityId == null) return null;
+
+    // Search in-memory list
+    for (Facility f : facilities) {
+        if (f.getFacilityId().equalsIgnoreCase(facilityId)) {
+            return f;
+        }
+    }
+
+    return null; // not found
+}
+
+
 
     
 

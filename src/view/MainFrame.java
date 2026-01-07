@@ -3135,16 +3135,28 @@ private JPanel createAppointmentPanel() {
     JButton editBtn = new JButton("Edit Appointment");
     JButton deleteBtn = new JButton("Delete Appointment");
     JButton viewBtn = new JButton("View Appointment");
+    JButton viewReferralBtn = new JButton("View Related Referrals");
+    JButton viewFacilityBtn = new JButton("View Facility");
+
+
 
     addBtn.addActionListener(e -> addAppointment());
     editBtn.addActionListener(e -> editAppointment());
     deleteBtn.addActionListener(e -> deleteAppointment());
     viewBtn.addActionListener(e -> viewAppointment());
+    viewReferralBtn.addActionListener(e -> viewAppointmentReferrals());
+    viewFacilityBtn.addActionListener(e -> viewAppointmentFacility());
+
+
 
     buttons.add(addBtn);
     buttons.add(editBtn);
     buttons.add(deleteBtn);
     buttons.add(viewBtn);
+    buttons.add(viewReferralBtn);
+    buttons.add(viewFacilityBtn);
+
+
 
     appointmentPanel.add(buttons, BorderLayout.SOUTH);
 
@@ -3376,6 +3388,68 @@ private void addAppointment() {
 }
 
 /**
+ * View Facility related to the selected Appointment.
+ *
+ * Part B:
+ * Appointment → Facility (via facilityId)
+ */
+private void viewAppointmentFacility() {
+
+    int row = appointmentTable.getSelectedRow();
+    if (row == -1) {
+        JOptionPane.showMessageDialog(
+                this,
+                "Please select an appointment first.",
+                "No Selection",
+                JOptionPane.WARNING_MESSAGE
+        );
+        return;
+    }
+
+    // Facility ID is column 3 in appointment table
+    String facilityId = appointmentTableModel.getValueAt(row, 3).toString();
+
+    try {
+        Facility facility = facilityRepository.getById(facilityId);
+
+        if (facility == null) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Facility not found.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            return;
+        }
+
+        StringBuilder details = new StringBuilder();
+        details.append("Facility ID: ").append(facility.getFacilityId()).append("\n");
+        details.append("Name: ").append(facility.getFacilityName()).append("\n");
+        details.append("Type: ").append(facility.getFacilityType()).append("\n");
+        details.append("Address: ").append(facility.getAddress()).append("\n");
+        details.append("Postcode: ").append(facility.getPostcode()).append("\n");
+        details.append("Phone: ").append(facility.getPhoneNumber()).append("\n");
+        details.append("Opening Hours: ").append(facility.getOpeningHours()).append("\n");
+
+        JTextArea area = new JTextArea(details.toString(), 15, 50);
+        area.setEditable(false);
+        area.setLineWrap(true);
+        area.setWrapStyleWord(true);
+
+        JOptionPane.showMessageDialog(
+                this,
+                new JScrollPane(area),
+                "Appointment Facility",
+                JOptionPane.INFORMATION_MESSAGE
+        );
+
+    } catch (Exception ex) {
+        showError(ex);
+    }
+}
+
+
+/**
  * Delete Appointment
  * ------------------
  * Deletes the selected appointment after user confirmation.
@@ -3439,8 +3513,84 @@ private void deleteAppointment() {
     }
 }
 
+/**
+ * View Referrals related to the selected Appointment.
+ *
+ * Indirect linkage:
+ * - Appointment -> patientId
+ * - Referral -> patientId
+ *
+ * This maintains loose coupling and matches Part 1 UML design.
+ */
+private void viewAppointmentReferrals() {
 
+    // Ensure an appointment is selected
+    int row = appointmentTable.getSelectedRow();
+    if (row == -1) {
+        JOptionPane.showMessageDialog(
+                this,
+                "Please select an appointment first.",
+                "No Selection",
+                JOptionPane.WARNING_MESSAGE
+        );
+        return;
+    }
 
+    // Extract patient ID from the selected appointment row
+    String patientId = appointmentTableModel.getValueAt(row, 1).toString();
+
+    try {
+        // Ensure referrals are loaded
+        referralRepository.load("data/referrals.csv");
+
+        StringBuilder details = new StringBuilder();
+        details.append("REFERRALS FOR PATIENT: ")
+               .append(patientId)
+               .append("\n");
+        details.append("====================================\n\n");
+
+        boolean found = false;
+
+        // Find referrals that share the same patient ID
+        for (Referral r : referralRepository.getAll()) {
+
+            if (r.getPatientId().equalsIgnoreCase(patientId)) {
+
+                found = true;
+
+                details.append("Referral ID: ").append(r.getReferralId()).append("\n");
+                details.append("Urgency: ").append(r.getUrgencyLevel()).append("\n");
+                details.append("Status: ").append(r.getStatus()).append("\n");
+                details.append("From Facility: ").append(r.getReferringFacilityId()).append("\n");
+                details.append("To Facility: ").append(r.getReferredToFacilityId()).append("\n");
+                details.append("Reason: ").append(r.getReferralReason()).append("\n");
+                details.append("------------------------------------\n");
+            }
+        }
+
+        if (!found) {
+            details.append("No referrals found for this appointment’s patient.");
+        }
+
+        // Display in scrollable dialog
+        JTextArea textArea = new JTextArea(details.toString(), 20, 60);
+        textArea.setEditable(false);
+        textArea.setLineWrap(true);
+        textArea.setWrapStyleWord(true);
+
+        JScrollPane scrollPane = new JScrollPane(textArea);
+
+        JOptionPane.showMessageDialog(
+                this,
+                scrollPane,
+                "Related Referrals",
+                JOptionPane.INFORMATION_MESSAGE
+        );
+
+    } catch (Exception ex) {
+        showError(ex);
+    }
+}
 
 
 
