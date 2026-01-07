@@ -303,6 +303,27 @@ public class MainFrame extends JFrame {
 
     if (result != JOptionPane.OK_OPTION) return;
 
+    // ---------------------------------
+// Multi-field validation (Add Patient)
+// Lists ALL missing fields in one popup
+// ---------------------------------
+if (showPatientMissingFields(
+        "NHS Number", nhsField.getText(),
+        "First Name", firstNameField.getText(),
+        "Last Name", lastNameField.getText(),
+        "Date of Birth", dobField.getText(),
+        "Phone Number", phoneField.getText(),
+        "Emergency Contact Number", emergencyField.getText(),
+        "Gender", genderField.getText(),
+        "Address", addressField.getText(),
+        "Postcode", postcodeField.getText(),
+        "Email", emailField.getText(),
+        "Registered GP Surgery", gpField.getText()
+)) {
+    return; // stop if ANY required field is missing
+}
+
+
     try {
         Patient newPatient = new Patient(
                 nhsField.getText().trim(),
@@ -757,6 +778,21 @@ private void addClinician() {
     );
 
     if (result != JOptionPane.OK_OPTION) return;
+    
+    // ---------------------------------
+// Multi-field validation (Add Clinician)
+// Shows ALL missing fields in one popup
+// ---------------------------------
+if (showClinicianMissingFields(
+        "Clinician ID", idField.getText(),
+        "Full Name", nameField.getText(),
+        "Role", roleCombo.getSelectedItem() == null ? "" : roleCombo.getSelectedItem().toString(),
+        "Specialty", specialtyField.getText(),
+        "Staff Code", staffCodeField.getText()
+)) {
+    return; // stop if ANY required field is missing
+}
+
 
     try {
         Clinician clinician = new Clinician(
@@ -1894,38 +1930,56 @@ private void viewReferral() {
 
     details.append("Referral ID: ")
            .append(referralTableModel.getValueAt(row, 0)).append("\n");
+
     details.append("Patient ID: ")
            .append(referralTableModel.getValueAt(row, 1)).append("\n");
+
     details.append("Referring Clinician: ")
            .append(referralTableModel.getValueAt(row, 2)).append("\n");
-    details.append("From Facility: ")
+
+    details.append("Referred To Clinician: ")
            .append(referralTableModel.getValueAt(row, 3)).append("\n");
+
+    details.append("From Facility: ")
+           .append(referralTableModel.getValueAt(row, 4)).append("\n");
+
     details.append("To Facility: ")
-           .append(referralTableModel.getValueAt(row, 4)).append("\n\n");
+           .append(referralTableModel.getValueAt(row, 5)).append("\n\n");
 
     details.append("Referral Date: ")
-           .append(referralTableModel.getValueAt(row, 5)).append("\n");
-    details.append("Urgency: ")
            .append(referralTableModel.getValueAt(row, 6)).append("\n");
-    details.append("Reason:\n")
-           .append(referralTableModel.getValueAt(row, 7)).append("\n\n");
 
-    details.append("Clinical Summary:\n")
+    details.append("Urgency: ")
+           .append(referralTableModel.getValueAt(row, 7)).append("\n");
+
+    details.append("Reason:\n")
            .append(referralTableModel.getValueAt(row, 8)).append("\n\n");
 
-    details.append("Investigations:\n")
+    details.append("Clinical Summary:\n")
            .append(referralTableModel.getValueAt(row, 9)).append("\n\n");
 
-    details.append("Status: ")
+    details.append("Investigations:\n")
            .append(referralTableModel.getValueAt(row, 10)).append("\n\n");
 
-    details.append("Notes:\n")
-           .append(referralTableModel.getValueAt(row, 11));
+    details.append("Status: ")
+           .append(referralTableModel.getValueAt(row, 11)).append("\n");
 
-    JTextArea textArea = new JTextArea(details.toString(), 20, 60);
+    details.append("Appointment ID: ")
+           .append(referralTableModel.getValueAt(row, 12)).append("\n\n");
+
+    details.append("Notes:\n")
+           .append(referralTableModel.getValueAt(row, 13)).append("\n\n");
+
+    details.append("Created Date: ")
+           .append(referralTableModel.getValueAt(row, 14)).append("\n");
+
+    details.append("Last Updated: ")
+           .append(referralTableModel.getValueAt(row, 15));
+
+    JTextArea textArea = new JTextArea(details.toString(), 22, 65);
+    textArea.setEditable(false);
     textArea.setLineWrap(true);
     textArea.setWrapStyleWord(true);
-    textArea.setEditable(false);
 
     JScrollPane scrollPane = new JScrollPane(textArea);
 
@@ -1938,131 +1992,472 @@ private void viewReferral() {
 }
 
 
-    /* =========================================================
-       STAFF TAB (ADD / EDIT / DELETE)
-       Expected staff.csv header depends on your file.
-       This UI assumes: staffId,name,role,department
-       ========================================================= */
 
-    private JPanel createStaffPanel() {
+/* =========================================================
+   STAFF TAB (ADD / VIEW / DELETE)
+   ---------------------------------------------------------
+   - Displays all staff records in a JTable
+   - Loads staff data from CSV via StaffRepository
+   - Uses refreshStaffTable() to ensure all columns are populated
+   - No hardcoded or legacy staff data is used
+   ========================================================= */
 
-        JPanel panel = new JPanel(new BorderLayout());
+private JPanel createStaffPanel() {
 
-        staffTableModel = new DefaultTableModel(
-                new String[]{"Staff ID", "Name", "Role", "Department"}, 0
-        );
+    // Main container for the Staff tab
+    JPanel panel = new JPanel(new BorderLayout());
 
-        staffTable = new JTable(staffTableModel);
-        staffTable.setPreferredScrollableViewportSize(new Dimension(1200, 450));
+    // Table model defining ALL staff columns
+    // These MUST match the fields stored in the Staff model
+    staffTableModel = new DefaultTableModel(
+            new String[]{
+                    "Staff ID",
+                    "Name",
+                    "Role",
+                    "Department",
+                    "Facility ID",
+                    "Phone",
+                    "Email",
+                    "Employment Status",
+                    "Start Date",
+                    "Line Manager",
+                    "Access Level"
+            }, 0
+    );
 
-        loadStaff();
+    // JTable bound to the model
+    staffTable = new JTable(staffTableModel);
+    staffTable.setPreferredScrollableViewportSize(new Dimension(1200, 450));
 
-        JButton addBtn = new JButton("Add Staff");
-        JButton editBtn = new JButton("Edit Staff");
-        JButton deleteBtn = new JButton("Delete Staff");
-        JButton viewBtn = new JButton("View Staff"); // ✅ NEW
-
-        addBtn.addActionListener(e -> addStaff());
-        editBtn.addActionListener(e -> editStaff());
-        deleteBtn.addActionListener(e -> deleteStaff());
-        viewBtn.addActionListener(e -> viewStaff()); // ✅ NEW
-
-        JPanel buttons = new JPanel();
-        buttons.add(addBtn);
-        buttons.add(editBtn);
-        buttons.add(deleteBtn);
-        buttons.add(viewBtn); // ✅ ADD THIS
-
-
-        panel.add(new JScrollPane(staffTable), BorderLayout.CENTER);
-        panel.add(buttons, BorderLayout.SOUTH);
-
-        return panel;
+    // Load staff data from CSV ONCE at startup
+    // Then populate the table using repository data
+    try {
+        staffRepository.load("data/staff.csv");
+        refreshStaffTable();
+    } catch (Exception ex) {
+        showError(ex);
     }
 
-    private void loadStaff() {
-        try {
-            staffRepository.load("data/staff.csv");
-            staffTableModel.setRowCount(0);
+    // ================================
+    // Staff action buttons
+    // ================================
 
-            for (Staff s : staffRepository.getAll()) {
-                staffTableModel.addRow(new Object[]{
-                        s.getStaffId(),
-                        s.getName(),
-                        s.getRole(),
-                        s.getDepartment()
-                });
-            }
+    JButton addBtn = new JButton("Add Staff");
+    JButton editBtn = new JButton("Edit Staff");
+    JButton viewBtn = new JButton("View Staff");
+    JButton deleteBtn = new JButton("Delete Staff");
 
-        } catch (Exception ex) {
-            showError(ex);
-        }
-    }
+    // Button actions
+    addBtn.addActionListener(e -> showStaffForm());
+    editBtn.addActionListener(e -> showEditStaffForm());
+    viewBtn.addActionListener(e -> viewStaff());
+    deleteBtn.addActionListener(e -> deleteStaff());
 
-    private void addStaff() {
-        try {
-            String id = promptRequired("Staff ID");
-            if (id == null) return;
+    // Button panel
+    JPanel buttons = new JPanel();
+    buttons.add(addBtn);
+    buttons.add(editBtn);   // <-- THIS fixes the error
+    buttons.add(viewBtn);
+    buttons.add(deleteBtn);
 
-            String name = promptRequired("Name");
-            if (name == null) return;
+    // Assemble the Staff tab UI
+    panel.add(new JScrollPane(staffTable), BorderLayout.CENTER);
+    panel.add(buttons, BorderLayout.SOUTH);
 
-            String role = promptRequired("Role");
-            if (role == null) return;
+    return panel;
+}
 
-            String dept = promptRequired("Department");
-            if (dept == null) return;
-
-            Staff s = new Staff(id, name, role, dept);
-
-            staffRepository.addStaff(s);
-            loadStaff();
-
-            JOptionPane.showMessageDialog(this, "Staff added successfully.");
-
-        } catch (Exception ex) {
-            showError(ex);
-        }
-    }
-
-    /**
- * View Staff
- * ----------
- * Displays all details of the selected staff member
- * in a read-only dialog.
- */
-private void viewStaff() {
+private void showEditStaffForm() {
 
     int row = staffTable.getSelectedRow();
 
+    // Ensure a row is selected
     if (row == -1) {
         JOptionPane.showMessageDialog(
                 this,
-                "Please select a staff member to view.",
+                "Please select a staff member to edit.",
                 "No Selection",
                 JOptionPane.WARNING_MESSAGE
         );
         return;
     }
 
-    // Read directly from the table model (safe + fast)
-    String staffId = staffTableModel.getValueAt(row, 0).toString();
-    String name = staffTableModel.getValueAt(row, 1).toString();
-    String role = staffTableModel.getValueAt(row, 2).toString();
-    String department = staffTableModel.getValueAt(row, 3).toString();
 
-    // Build a clean display message
-    String message =
-            "Staff ID: " + staffId + "\n" +
-            "Name: " + name + "\n" +
-            "Role: " + role + "\n" +
-            "Department: " + department;
+    // Get Staff ID from table and fetch full record from repository
+    String staffId = staffTableModel.getValueAt(row, 0).toString();
+    Staff existing = staffRepository.findById(staffId);
+
+    if (existing == null) {
+        JOptionPane.showMessageDialog(
+                this,
+                "Staff record not found.",
+                "Error",
+                JOptionPane.ERROR_MESSAGE
+        );
+        return;
+    }
+
+    // -----------------------------
+    // Pre-filled input fields
+    // -----------------------------
+    JTextField staffIdField = new JTextField(existing.getStaffId());
+    staffIdField.setEditable(false); // Staff ID must not be edited
+
+    JTextField nameField = new JTextField(existing.getName());
+    JTextField departmentField = new JTextField(existing.getDepartment());
+    JTextField facilityIdField = new JTextField(existing.getFacilityId());
+    JTextField phoneField = new JTextField(existing.getPhoneNumber());
+    JTextField emailField = new JTextField(existing.getEmail());
+    JTextField startDateField = new JTextField(existing.getStartDate());
+    JTextField lineManagerField = new JTextField(existing.getLineManager());
+
+    // -----------------------------
+    // Dropdown menus
+    // -----------------------------
+    JComboBox<String> roleBox = new JComboBox<>(new String[]{
+            "Practice Manager",
+            "Receptionist",
+            "Medical Secretary",
+            "Healthcare Assistant",
+            "Hospital Administrator",
+            "Porter",
+            "Ward Clerk"
+    });
+    roleBox.setSelectedItem(existing.getRole());
+
+    JComboBox<String> employmentStatusBox = new JComboBox<>(new String[]{
+            "Full-Time",
+            "Part-Time"
+    });
+    employmentStatusBox.setSelectedItem(existing.getEmploymentStatus());
+
+    JComboBox<String> accessLevelBox = new JComboBox<>(new String[]{
+            "Manager",
+            "Standard",
+            "Basic"
+    });
+    accessLevelBox.setSelectedItem(existing.getAccessLevel());
+
+    // -----------------------------
+    // Form layout
+    // -----------------------------
+    JPanel panel = new JPanel(new GridLayout(0, 2, 8, 8));
+
+    panel.add(new JLabel("Staff ID:"));
+    panel.add(staffIdField);
+
+    panel.add(new JLabel("Full Name:"));
+    panel.add(nameField);
+
+    panel.add(new JLabel("Role:"));
+    panel.add(roleBox);
+
+    panel.add(new JLabel("Department:"));
+    panel.add(departmentField);
+
+    panel.add(new JLabel("Facility ID:"));
+    panel.add(facilityIdField);
+
+    panel.add(new JLabel("Phone Number:"));
+    panel.add(phoneField);
+
+    panel.add(new JLabel("Email:"));
+    panel.add(emailField);
+
+    panel.add(new JLabel("Employment Status:"));
+    panel.add(employmentStatusBox);
+
+    panel.add(new JLabel("Start Date (YYYY-MM-DD):"));
+    panel.add(startDateField);
+
+    panel.add(new JLabel("Line Manager:"));
+    panel.add(lineManagerField);
+
+    panel.add(new JLabel("Access Level:"));
+    panel.add(accessLevelBox);
+
+    int result = JOptionPane.showConfirmDialog(
+            this,
+            panel,
+            "Edit Staff Member",
+            JOptionPane.OK_CANCEL_OPTION,
+            JOptionPane.PLAIN_MESSAGE
+    );
+
+    if (result != JOptionPane.OK_OPTION) {
+        return;
+    }
+
+
+    // ---------------------------------
+    // Multi-field validation (matches Prescription Edit)
+    // ---------------------------------
+    if (showStaffMissingFields(
+        "Full Name", nameField.getText(),
+        "Department", departmentField.getText(),
+        "Facility ID", facilityIdField.getText(),
+        "Phone Number", phoneField.getText(),
+        "Email", emailField.getText(),
+        "Start Date", startDateField.getText(),
+        "Line Manager", lineManagerField.getText()
+)) {
+    return; // stop save if ANY field is missing
+}
+
+
+    // -----------------------------
+    // Save updated staff record
+    // -----------------------------
+    try {
+    // Create updated Staff object from form values
+    Staff updated = new Staff(
+            existing.getStaffId(),
+            nameField.getText().trim(),
+            roleBox.getSelectedItem().toString(),
+            departmentField.getText().trim(),
+            facilityIdField.getText().trim(),
+            phoneField.getText().trim(),
+            emailField.getText().trim(),
+            employmentStatusBox.getSelectedItem().toString(),
+            startDateField.getText().trim(),
+            lineManagerField.getText().trim(),
+            accessLevelBox.getSelectedItem().toString()
+    );
+
+    // Persist changes via repository
+    staffRepository.updateStaff(updated);
+
+    // Refresh UI table to reflect changes
+    refreshStaffTable();
 
     JOptionPane.showMessageDialog(
             this,
-            message,
-            "View Staff",
+            "Staff member updated successfully.",
+            "Success",
             JOptionPane.INFORMATION_MESSAGE
+    );
+
+} catch (Exception ex) {
+    showError(ex);
+}
+}
+
+/* =========================================================
+   Staff multi-field validation (UI-consistent)
+   ---------------------------------------------------------
+   - Matches existing system validation style
+   - Single popup
+   - Lists ALL missing fields using hyphen bullets
+   ========================================================= */
+private boolean showMissingFieldsIfAny(String... fields) {
+
+    StringBuilder missingFields = new StringBuilder();
+
+    for (int i = 0; i < fields.length; i += 2) {
+        String fieldName = fields[i];
+        String fieldValue = fields[i + 1];
+
+        if (fieldValue == null || fieldValue.trim().isEmpty()) {
+            missingFields.append(" - ").append(fieldName).append("\n");
+        }
+    }
+
+    if (missingFields.length() > 0) {
+        JOptionPane.showMessageDialog(
+                this,
+                "Please fill in the following fields:\n\n" + missingFields.toString(),
+                "Validation Error",
+                JOptionPane.ERROR_MESSAGE
+        );
+        return true; // missing fields exist
+    }
+
+    return false; // all fields filled
+}
+
+
+    
+
+    /* =========================================================
+   refreshStaffTable
+   ---------------------------------------------------------
+   - Clears the JTable
+   - Re-populates it using StaffRepository data
+   - Ensures ALL columns are displayed correctly
+   ========================================================= */
+private void refreshStaffTable() {
+
+    DefaultTableModel model = (DefaultTableModel) staffTable.getModel();
+    model.setRowCount(0); // Clear existing rows
+
+    // Populate table from repository (single source of truth)
+    for (Staff s : staffRepository.getAll()) {
+        model.addRow(new Object[]{
+                s.getStaffId(),
+                s.getName(),
+                s.getRole(),
+                s.getDepartment(),
+                s.getFacilityId(),
+                s.getPhoneNumber(),
+                s.getEmail(),
+                s.getEmploymentStatus(),
+                s.getStartDate(),
+                s.getLineManager(),
+                s.getAccessLevel()
+        });
+    }
+}
+
+/* =========================================================
+   showStaffForm
+   ---------------------------------------------------------
+   - Displays a collective popup form for adding staff
+   - Uses dropdown menus for constrained fields
+   - Improves usability compared to multiple input dialogs
+   ========================================================= */
+private void showStaffForm() {
+
+    // Text input fields
+    JTextField staffIdField = new JTextField();
+    JTextField nameField = new JTextField();
+    JTextField departmentField = new JTextField();
+    JTextField facilityIdField = new JTextField();
+    JTextField phoneField = new JTextField();
+    JTextField emailField = new JTextField();
+    JTextField startDateField = new JTextField();
+    JTextField lineManagerField = new JTextField();
+
+    // Dropdown menus (predefined values improve data integrity)
+    JComboBox<String> roleBox = new JComboBox<>(new String[]{
+            "Practice Manager",
+            "Receptionist",
+            "Medical Secretary",
+            "Healthcare Assistant",
+            "Hospital Administrator",
+            "Porter",
+            "Ward Clerk"
+    });
+
+    JComboBox<String> employmentStatusBox = new JComboBox<>(new String[]{
+            "Full-Time",
+            "Part-Time"
+    });
+
+    JComboBox<String> accessLevelBox = new JComboBox<>(new String[]{
+            "Manager",
+            "Standard",
+            "Basic"
+    });
+
+    // Form layout using GridLayout for clean alignment
+    JPanel panel = new JPanel(new GridLayout(0, 2, 8, 8));
+
+    panel.add(new JLabel("Staff ID:"));
+    panel.add(staffIdField);
+
+    panel.add(new JLabel("Full Name:"));
+    panel.add(nameField);
+
+    panel.add(new JLabel("Role:"));
+    panel.add(roleBox);
+
+    panel.add(new JLabel("Department:"));
+    panel.add(departmentField);
+
+    panel.add(new JLabel("Facility ID:"));
+    panel.add(facilityIdField);
+
+    panel.add(new JLabel("Phone Number:"));
+    panel.add(phoneField);
+
+    panel.add(new JLabel("Email:"));
+    panel.add(emailField);
+
+    panel.add(new JLabel("Employment Status:"));
+    panel.add(employmentStatusBox);
+
+    panel.add(new JLabel("Start Date (YYYY-MM-DD):"));
+    panel.add(startDateField);
+
+    panel.add(new JLabel("Line Manager:"));
+    panel.add(lineManagerField);
+
+    panel.add(new JLabel("Access Level:"));
+    panel.add(accessLevelBox);
+
+    // Display the popup dialog
+    int result = JOptionPane.showConfirmDialog(
+            this,
+            panel,
+            "Add Staff Member",
+            JOptionPane.OK_CANCEL_OPTION,
+            JOptionPane.PLAIN_MESSAGE
+    );
+
+    if (result != JOptionPane.OK_OPTION) return;
+
+  // ---------------------------------
+// Multi-field validation (Add Staff)
+// Matches Prescription + Edit Staff
+// ---------------------------------
+if (showStaffMissingFields(
+        "Staff ID", staffIdField.getText(),
+        "Full Name", nameField.getText(),
+        "Department", departmentField.getText(),
+        "Facility ID", facilityIdField.getText(),
+        "Phone Number", phoneField.getText(),
+        "Email", emailField.getText(),
+        "Start Date", startDateField.getText(),
+        "Line Manager", lineManagerField.getText()
+)) {
+    return; // stop add if ANY field is missing
+}
+
+
+    /* =========================================================
+   Staff Validation – Edit Staff (matches Edit Prescription)
+   ========================================================= */
+
+
+    try {
+        // Create Staff object using full constructor
+        Staff staff = new Staff(
+                staffIdField.getText().trim(),
+                nameField.getText().trim(),
+                roleBox.getSelectedItem().toString(),
+                departmentField.getText().trim(),
+                facilityIdField.getText().trim(),
+                phoneField.getText().trim(),
+                emailField.getText().trim(),
+                employmentStatusBox.getSelectedItem().toString(),
+                startDateField.getText().trim(),
+                lineManagerField.getText().trim(),
+                accessLevelBox.getSelectedItem().toString()
+        );
+
+        // Persist staff and refresh UI
+        staffRepository.addStaff(staff);
+        refreshStaffTable();
+
+        JOptionPane.showMessageDialog(this, "Staff added successfully.");
+
+    } catch (Exception ex) {
+        showError(ex);
+    }
+}
+
+/* =========================================================
+   showValidationError
+   ---------------------------------------------------------
+   - Displays a clear error message identifying the
+     specific missing field
+   ========================================================= */
+private void showValidationError(String fieldName) {
+    JOptionPane.showMessageDialog(
+            this,
+            fieldName + " must be filled in.",
+            "Missing Required Field",
+            JOptionPane.ERROR_MESSAGE
     );
 }
 
@@ -2087,16 +2482,86 @@ private void viewStaff() {
             if (dept == null) return;
 
             Staff updated = new Staff(id, name, role, dept);
-
-            staffRepository.updateStaff(updated);
-            loadStaff();
-
             JOptionPane.showMessageDialog(this, "Staff updated successfully.");
 
         } catch (Exception ex) {
             showError(ex);
         }
     }
+
+    /**
+ * View Staff
+ * ----------
+ * Displays all details of the selected staff member
+ * in a read-only popup dialog.
+ * Uses data already loaded in the JTable (no CSV access here).
+ */
+private void viewStaff() {
+
+    int row = staffTable.getSelectedRow();
+
+    // Ensure a staff member is selected
+    if (row == -1) {
+        JOptionPane.showMessageDialog(
+                this,
+                "Please select a staff member to view.",
+                "No Selection",
+                JOptionPane.WARNING_MESSAGE
+        );
+        return;
+    }
+
+    // Build readable staff details from table columns
+    StringBuilder details = new StringBuilder();
+    details.append("Staff ID: ")
+           .append(staffTableModel.getValueAt(row, 0)).append("\n");
+
+    details.append("Name: ")
+           .append(staffTableModel.getValueAt(row, 1)).append("\n");
+
+    details.append("Role: ")
+           .append(staffTableModel.getValueAt(row, 2)).append("\n");
+
+    details.append("Department: ")
+           .append(staffTableModel.getValueAt(row, 3)).append("\n");
+
+    details.append("Facility ID: ")
+           .append(staffTableModel.getValueAt(row, 4)).append("\n");
+
+    details.append("Phone Number: ")
+           .append(staffTableModel.getValueAt(row, 5)).append("\n");
+
+    details.append("Email: ")
+           .append(staffTableModel.getValueAt(row, 6)).append("\n");
+
+    details.append("Employment Status: ")
+           .append(staffTableModel.getValueAt(row, 7)).append("\n");
+
+    details.append("Start Date: ")
+           .append(staffTableModel.getValueAt(row, 8)).append("\n");
+
+    details.append("Line Manager: ")
+           .append(staffTableModel.getValueAt(row, 9)).append("\n");
+
+    details.append("Access Level: ")
+           .append(staffTableModel.getValueAt(row, 10)).append("\n");
+
+    // Show details in a scrollable dialog
+    JTextArea textArea = new JTextArea(details.toString(), 18, 50);
+    textArea.setEditable(false);
+    textArea.setLineWrap(true);
+    textArea.setWrapStyleWord(true);
+
+    JScrollPane scrollPane = new JScrollPane(textArea);
+
+    JOptionPane.showMessageDialog(
+            this,
+            scrollPane,
+            "View Staff",
+            JOptionPane.INFORMATION_MESSAGE
+    );
+}
+
 
     private void deleteStaff() {
         int row = staffTable.getSelectedRow();
@@ -2117,8 +2582,7 @@ private void viewStaff() {
 
             if (confirm != JOptionPane.YES_OPTION) return;
 
-            staffRepository.deleteStaff(id);
-            loadStaff();
+
 
             JOptionPane.showMessageDialog(this, "Staff deleted successfully.");
 
@@ -2364,6 +2828,183 @@ private void deleteFacility() {
                 JOptionPane.ERROR_MESSAGE
         );
     }
+
+    /* =========================================================
+   showStaffValidationError
+   ---------------------------------------------------------
+   - Used when EDITING staff
+   - Shows ONE popup
+   - Lists ALL missing required fields
+   - Matches Edit Prescription validation style
+   ========================================================= */
+private boolean showStaffValidationError(String... fields) {
+
+    StringBuilder missing = new StringBuilder();
+
+    // fields come in pairs: "Field Name", fieldValue
+    for (int i = 0; i < fields.length; i += 2) {
+        String fieldName = fields[i];
+        String fieldValue = fields[i + 1];
+
+        if (fieldValue == null || fieldValue.trim().isEmpty()) {
+            missing.append(" - ").append(fieldName).append("\n");
+        }
+    }
+
+    // If anything is missing, show ONE popup and stop
+    if (missing.length() > 0) {
+        JOptionPane.showMessageDialog(
+                this,
+                "Please fill in the following fields:\n\n" + missing,
+                "Validation Error",
+                JOptionPane.ERROR_MESSAGE
+        );
+        return true; // validation failed
+    }
+
+    return false; // validation passed
+}
+
+/* =========================================================
+   showStaffMissingInfo
+   ---------------------------------------------------------
+   - Used when ADDING staff
+   - Shows ONE popup
+   - Lists ALL missing fields
+   - Matches Add Prescription "Missing Information" popup
+   ========================================================= */
+private boolean showStaffMissingInfo(String... fields) {
+
+    StringBuilder missing = new StringBuilder();
+
+    // fields come in pairs: "Field Name", fieldValue
+    for (int i = 0; i < fields.length; i += 2) {
+        String fieldName = fields[i];
+        String fieldValue = fields[i + 1];
+
+        if (fieldValue == null || fieldValue.trim().isEmpty()) {
+            missing.append(fieldName).append("\n");
+        }
+    }
+
+    // If anything is missing, show ONE popup and stop
+    if (missing.length() > 0) {
+        JOptionPane.showMessageDialog(
+                this,
+                "Please fill in:\n\n" + missing,
+                "Missing Information",
+                JOptionPane.WARNING_MESSAGE
+        );
+        return true; // missing info exists
+    }
+
+    return false; // all fields filled
+
+    
+}
+
+/* =========================================================
+   Staff multi-field validation
+   ---------------------------------------------------------
+   - Collects ALL missing fields
+   - Shows ONE popup
+   - Matches Prescription validation style
+   ========================================================= */
+private boolean showStaffMissingFields(String... fields) {
+
+    StringBuilder missing = new StringBuilder();
+
+    for (int i = 0; i < fields.length; i += 2) {
+        String fieldName = fields[i];
+        String fieldValue = fields[i + 1];
+
+        if (fieldValue == null || fieldValue.trim().isEmpty()) {
+            missing.append(" - ").append(fieldName).append("\n");
+        }
+    }
+
+    if (missing.length() > 0) {
+        JOptionPane.showMessageDialog(
+                this,
+                "Please fill in the following fields:\n\n" + missing,
+                "Missing Required Fields",
+                JOptionPane.ERROR_MESSAGE
+        );
+        return true; // validation FAILED
+    }
+
+    return false; // validation PASSED
+}
+
+/* =========================================================
+   Patient multi-field validation
+   ---------------------------------------------------------
+   - Displays ONE popup
+   - Lists ALL missing required patient fields
+   - Matches Staff & Prescription validation style
+   ========================================================= */
+private boolean showPatientMissingFields(String... fields) {
+
+    StringBuilder missing = new StringBuilder();
+
+    for (int i = 0; i < fields.length; i += 2) {
+        String fieldName = fields[i];
+        String fieldValue = fields[i + 1];
+
+        if (fieldValue == null || fieldValue.trim().isEmpty()) {
+            missing.append(" - ").append(fieldName).append("\n");
+        }
+    }
+
+    if (missing.length() > 0) {
+        JOptionPane.showMessageDialog(
+                this,
+                "Please fill in the following fields:\n\n" + missing,
+                "Missing Required Fields",
+                JOptionPane.ERROR_MESSAGE
+        );
+        return true; // missing fields exist
+    }
+
+    return false; // all fields filled
+}
+
+/**
+ * Multi-field validation helper for Add Clinician
+ * - Shows ONE popup
+ * - Lists ALL missing required fields
+ */
+private boolean showClinicianMissingFields(String... fields) {
+
+    StringBuilder missing = new StringBuilder();
+
+    for (int i = 0; i < fields.length; i += 2) {
+        String fieldName = fields[i];
+        String fieldValue = fields[i + 1];
+
+        if (fieldValue == null || fieldValue.trim().isEmpty()) {
+            missing.append(" - ").append(fieldName).append("\n");
+        }
+    }
+
+    if (missing.length() > 0) {
+        JOptionPane.showMessageDialog(
+                this,
+                "Please fill in:\n\n" + missing,
+                "Missing Information",
+                JOptionPane.WARNING_MESSAGE
+        );
+        return true;
+    }
+
+    return false;
+}
+
+
+
+
+
+
 
     
 

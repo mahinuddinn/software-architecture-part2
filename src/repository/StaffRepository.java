@@ -11,11 +11,13 @@ import java.util.List;
  * ---------------
  * Loads and persists Staff records from/to a CSV file.
  *
- * CSV expected format:
- * staffId,firstName,lastName,role,department
+ * EXTENDED CSV format:
+ * staffId,firstName,lastName,role,department,facilityId,phoneNumber,email,
+ * employmentStatus,startDate,lineManager,accessLevel
  *
  * GUI expected display:
- * Staff ID | Name (first + last) | Role | Department
+ * Staff ID | Name | Role | Department | Facility | Phone | Email |
+ * Employment Status | Start Date | Line Manager | Access Level
  *
  * This class belongs to the MODEL layer in MVC.
  * It performs:
@@ -58,17 +60,38 @@ public class StaffRepository {
                 if (line.trim().isEmpty()) continue;
 
                 String[] cols = line.split(",", -1);
-                if (cols.length < 5) continue;
+
+                // Defensive check to avoid malformed CSV rows
+                if (cols.length < 12) continue;
 
                 String staffId = cols[0].trim();
                 String firstName = cols[1].trim();
                 String lastName = cols[2].trim();
                 String role = cols[3].trim();
                 String department = cols[4].trim();
+                String facilityId = cols[5].trim();
+                String phoneNumber = cols[6].trim();
+                String email = cols[7].trim();
+                String employmentStatus = cols[8].trim();
+                String startDate = cols[9].trim();
+                String lineManager = cols[10].trim();
+                String accessLevel = cols[11].trim();
 
                 String fullName = (firstName + " " + lastName).trim();
 
-                staffList.add(new Staff(staffId, fullName, role, department));
+                staffList.add(new Staff(
+                        staffId,
+                        fullName,
+                        role,
+                        department,
+                        facilityId,
+                        phoneNumber,
+                        email,
+                        employmentStatus,
+                        startDate,
+                        lineManager,
+                        accessLevel
+                ));
             }
         }
     }
@@ -86,7 +109,7 @@ public class StaffRepository {
 
     /**
      * Find a staff member by staff ID.
-     * Used by "View Staff" button logic.
+     * Used by View / Edit / Delete logic.
      */
     public Staff findById(String staffId) {
         for (Staff s : staffList) {
@@ -103,6 +126,9 @@ public class StaffRepository {
 
     /**
      * Add new staff record and persist to CSV.
+     *
+     * Validation is intentionally minimal here.
+     * Detailed field validation is handled in the VIEW layer.
      */
     public void addStaff(Staff staff) throws IOException {
 
@@ -153,7 +179,7 @@ public class StaffRepository {
        ===================================================== */
 
     /**
-     * Delete staff by staff ID and persist.
+     * Delete staff by staff ID and persist changes.
      */
     public void deleteStaff(String staffId) throws IOException {
 
@@ -175,8 +201,8 @@ public class StaffRepository {
     /**
      * Save current in-memory staff list back to the CSV.
      *
-     * Staff model stores fullName, so we split it
-     * back into first + last name.
+     * Staff model stores full name, so it is split
+     * back into first and last name for CSV storage.
      */
     private void saveToCsv() throws IOException {
 
@@ -186,7 +212,8 @@ public class StaffRepository {
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(sourceFilePath))) {
 
-            writer.write("staffId,firstName,lastName,role,department");
+            // Updated CSV header
+            writer.write("staffId,firstName,lastName,role,department,facilityId,phoneNumber,email,employmentStatus,startDate,lineManager,accessLevel");
             writer.newLine();
 
             for (Staff s : staffList) {
@@ -198,7 +225,14 @@ public class StaffRepository {
                         safe(nameParts[0]),
                         safe(nameParts[1]),
                         safe(s.getRole()),
-                        safe(s.getDepartment())
+                        safe(s.getDepartment()),
+                        safe(s.getFacilityId()),
+                        safe(s.getPhoneNumber()),
+                        safe(s.getEmail()),
+                        safe(s.getEmploymentStatus()),
+                        safe(s.getStartDate()),
+                        safe(s.getLineManager()),
+                        safe(s.getAccessLevel())
                 ));
                 writer.newLine();
             }
@@ -210,7 +244,7 @@ public class StaffRepository {
        ===================================================== */
 
     /**
-     * Split a full name into first + last.
+     * Split a full name into first + last name.
      */
     private String[] splitName(String fullName) {
 
