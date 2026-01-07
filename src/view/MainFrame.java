@@ -125,6 +125,7 @@ public class MainFrame extends JFrame {
         referralRepository = new ReferralRepository();
         staffRepository = new StaffRepository();
         facilityRepository = new FacilityRepository();
+        
 
         // ---------- Build tabbed UI ----------
         // Each tab is created by a dedicated method for clarity.
@@ -165,7 +166,7 @@ public class MainFrame extends JFrame {
                 "Registered GP Surgery"
          }, 0
 );
-
+        
 
 
         patientTable = new JTable(patientTableModel);
@@ -1789,6 +1790,122 @@ private void showReferralForm(Referral existing) {
 
     
 
+    /**
+ * Shows a collective popup form for adding a Facility.
+ */
+private void showFacilityForm() {
+
+    // ==============================
+    // INPUT FIELDS (DECLARE FIRST)
+    // ==============================
+    JTextField facilityIdField = new JTextField();
+    JTextField facilityNameField = new JTextField();
+    JTextField facilityTypeField = new JTextField();
+    JTextField addressField = new JTextField();
+    JTextField postcodeField = new JTextField();
+    JTextField phoneField = new JTextField();
+    JTextField emailField = new JTextField();
+    JTextField openingHoursField = new JTextField();
+    JTextField managerNameField = new JTextField();
+    JTextField capacityField = new JTextField();
+    JTextField specialitiesField = new JTextField();
+
+    // ==============================
+    // BUILD FORM PANEL
+    // ==============================
+    JPanel panel = new JPanel(new GridLayout(0, 2, 8, 8));
+
+    panel.add(new JLabel("Facility ID"));
+    panel.add(facilityIdField);
+
+    panel.add(new JLabel("Facility Name"));
+    panel.add(facilityNameField);
+
+    panel.add(new JLabel("Facility Type"));
+    panel.add(facilityTypeField);
+
+    panel.add(new JLabel("Address"));
+    panel.add(addressField);
+
+    panel.add(new JLabel("Postcode"));
+    panel.add(postcodeField);
+
+    panel.add(new JLabel("Phone Number"));
+    panel.add(phoneField);
+
+    panel.add(new JLabel("Email"));
+    panel.add(emailField);
+
+    panel.add(new JLabel("Opening Hours"));
+    panel.add(openingHoursField);
+
+    panel.add(new JLabel("Manager Name"));
+    panel.add(managerNameField);
+
+    panel.add(new JLabel("Capacity"));
+    panel.add(capacityField);
+
+    panel.add(new JLabel("Specialities Offered"));
+    panel.add(specialitiesField);
+
+    JScrollPane scrollPane = new JScrollPane(panel);
+    scrollPane.setPreferredSize(new Dimension(420, 360));
+
+    int result = JOptionPane.showConfirmDialog(
+            this,
+            scrollPane,
+            "Add Facility",
+            JOptionPane.OK_CANCEL_OPTION,
+            JOptionPane.PLAIN_MESSAGE
+    );
+
+    if (result != JOptionPane.OK_OPTION) return;
+
+    // ==============================
+    // VALIDATE CAPACITY
+    // ==============================
+    int capacity;
+    try {
+        capacity = Integer.parseInt(capacityField.getText().trim());
+    } catch (NumberFormatException e) {
+        JOptionPane.showMessageDialog(
+                this,
+                "Capacity must be a valid number.",
+                "Invalid Input",
+                JOptionPane.WARNING_MESSAGE
+        );
+        return;
+    }
+
+    // ==============================
+    // CREATE FACILITY OBJECT
+    // ==============================
+    Facility facility = new Facility(
+            facilityIdField.getText().trim(),
+            facilityNameField.getText().trim(),
+            facilityTypeField.getText().trim(),
+            addressField.getText().trim(),
+            postcodeField.getText().trim(),
+            phoneField.getText().trim(),
+            emailField.getText().trim(),
+            openingHoursField.getText().trim(),
+            managerNameField.getText().trim(),
+            capacity,
+            specialitiesField.getText().trim()
+    );
+
+    try {
+        facilityRepository.addFacility(facility);
+        loadFacilities();
+
+        JOptionPane.showMessageDialog(this, "Facility added successfully.");
+    } catch (Exception ex) {
+        showError(ex);
+    }
+}
+
+    
+
         /**
  * Displays all referral details for the selected row in a read-only dialog.
  * This avoids column truncation and allows viewing the full referral content.
@@ -2490,22 +2607,48 @@ private JPanel createFacilityPanel() {
 
     JPanel panel = new JPanel(new BorderLayout());
 
-    // ✅ COLUMN COUNT MUST MATCH MODEL + CSV
     facilityTableModel = new DefaultTableModel(
-            new String[]{"Facility ID", "Name", "Type", "Address", "Phone Number"}, 0
+        new String[]{
+            "Facility ID",
+            "Name",
+            "Type",
+            "Address",
+            "Postcode",
+            "Phone Number",
+            "Email",
+            "Opening Hours",
+            "Manager Name",
+            "Capacity",
+            "Specialities Offered"
+        },
+        0
     );
 
     facilityTable = new JTable(facilityTableModel);
     facilityTable.setRowHeight(22);
 
-    loadFacilities();
+    panel.add(new JScrollPane(facilityTable), BorderLayout.CENTER);
+
+    // LOAD CSV ONCE
+    try {
+        facilityRepository.load("data/facilities.csv");
+        loadFacilities();
+    } catch (Exception e) {
+        JOptionPane.showMessageDialog(
+                this,
+                "Failed to load facilities data:\n" + e.getMessage(),
+                "Load Error",
+                JOptionPane.ERROR_MESSAGE
+        );
+    }
 
     JButton addBtn = new JButton("Add Facility");
     JButton editBtn = new JButton("Edit Facility");
     JButton deleteBtn = new JButton("Delete Facility");
     JButton viewBtn = new JButton("View Facility");
 
-    addBtn.addActionListener(e -> addFacility());
+    // 🔑 USE CORRECT METHODS
+    addBtn.addActionListener(e -> showFacilityForm());
     editBtn.addActionListener(e -> editFacility());
     deleteBtn.addActionListener(e -> deleteFacility());
     viewBtn.addActionListener(e -> viewFacility());
@@ -2516,31 +2659,39 @@ private JPanel createFacilityPanel() {
     buttons.add(deleteBtn);
     buttons.add(viewBtn);
 
-    panel.add(new JScrollPane(facilityTable), BorderLayout.CENTER);
     panel.add(buttons, BorderLayout.SOUTH);
 
     return panel;
 }
 
 
-private void loadFacilities() {
-    try {
-        facilityRepository.load("data/facilities.csv");
-        facilityTableModel.setRowCount(0);
 
-        for (Facility f : facilityRepository.getAll()) {
-            facilityTableModel.addRow(new Object[]{
-                    f.getFacilityId(),
-                    f.getName(),
-                    f.getType(),
-                    f.getAddress(),
-                    f.getPhoneNumber()
-            });
-        }
-    } catch (Exception e) {
-        showError(e);
+private void loadFacilities() {
+
+    facilityTableModel.setRowCount(0); // clear table first
+
+    List<Facility> facilities = facilityRepository.getAllFacilities();
+
+    for (Facility f : facilities) {
+        facilityTableModel.addRow(new Object[]{
+            f.getFacilityId(),
+            f.getFacilityName(),
+            f.getFacilityType(),
+            f.getAddress(),
+            f.getPostcode(),
+            f.getPhoneNumber(),
+            f.getEmail(),
+            f.getOpeningHours(),
+            f.getManagerName(),
+            f.getCapacity(),
+            f.getSpecialitiesOffered()
+});
+
     }
 }
+
+
+
 
 
 /**
@@ -2562,20 +2713,33 @@ private void viewFacility() {
         return;
     }
 
-    String message =
-            "Facility ID: " + facilityTableModel.getValueAt(row, 0) + "\n" +
-            "Name: " + facilityTableModel.getValueAt(row, 1) + "\n" +
-            "Type: " + facilityTableModel.getValueAt(row, 2) + "\n" +
-            "Address: " + facilityTableModel.getValueAt(row, 3) + "\n" +
-            "Phone Number: " + facilityTableModel.getValueAt(row, 4);
+    StringBuilder details = new StringBuilder();
+
+    details.append("Facility ID: ").append(facilityTableModel.getValueAt(row, 0)).append("\n");
+    details.append("Name: ").append(facilityTableModel.getValueAt(row, 1)).append("\n");
+    details.append("Type: ").append(facilityTableModel.getValueAt(row, 2)).append("\n");
+    details.append("Address: ").append(facilityTableModel.getValueAt(row, 3)).append("\n");
+    details.append("Postcode: ").append(facilityTableModel.getValueAt(row, 4)).append("\n");
+    details.append("Phone Number: ").append(facilityTableModel.getValueAt(row, 5)).append("\n");
+    details.append("Email: ").append(facilityTableModel.getValueAt(row, 6)).append("\n");
+    details.append("Opening Hours: ").append(facilityTableModel.getValueAt(row, 7)).append("\n");
+    details.append("Manager Name: ").append(facilityTableModel.getValueAt(row, 8)).append("\n");
+    details.append("Capacity: ").append(facilityTableModel.getValueAt(row, 9)).append("\n");
+    details.append("Specialities Offered: ").append(facilityTableModel.getValueAt(row, 10));
+
+    JTextArea textArea = new JTextArea(details.toString(), 18, 50);
+    textArea.setEditable(false);
+    textArea.setLineWrap(true);
+    textArea.setWrapStyleWord(true);
 
     JOptionPane.showMessageDialog(
             this,
-            message,
-            "View Facility",
+            new JScrollPane(textArea),
+            "Facility Details",
             JOptionPane.INFORMATION_MESSAGE
     );
 }
+
 
 
 
@@ -2596,7 +2760,36 @@ private void addFacility() {
         String phone = promptRequired("Phone Number");
         if (phone == null) return;
 
-        Facility f = new Facility(id, name, type, address, phone);
+        // ==============================
+// ENSURE A ROW IS SELECTED
+// ==============================
+int row = facilityTable.getSelectedRow();
+
+if (row == -1) {
+    JOptionPane.showMessageDialog(
+            this,
+            "Please select a facility first.",
+            "No Selection",
+            JOptionPane.WARNING_MESSAGE
+    );
+    return;
+}
+
+
+Facility f = new Facility(
+        facilityTableModel.getValueAt(row, 0).toString(),   // facility_id
+        facilityTableModel.getValueAt(row, 1).toString(),   // facility_name
+        facilityTableModel.getValueAt(row, 2).toString(),   // facility_type
+        facilityTableModel.getValueAt(row, 3).toString(),   // address
+        facilityTableModel.getValueAt(row, 4).toString(),   // postcode
+        facilityTableModel.getValueAt(row, 5).toString(),   // phone_number
+        facilityTableModel.getValueAt(row, 6).toString(),   // email
+        facilityTableModel.getValueAt(row, 7).toString(),   // opening_hours
+        facilityTableModel.getValueAt(row, 8).toString(),   // manager_name
+        Integer.parseInt(facilityTableModel.getValueAt(row, 9).toString()), // capacity
+        facilityTableModel.getValueAt(row, 10).toString()   // specialities_offered
+);
+
 
         facilityRepository.addFacility(f);
         loadFacilities();
@@ -2619,12 +2812,61 @@ private void editFacility() {
 
     try {
         Facility updated = new Facility(
-                facilityTableModel.getValueAt(row, 0).toString(),
-                promptRequiredDefault("Facility Name", facilityTableModel.getValueAt(row, 1).toString()),
-                promptRequiredDefault("Facility Type", facilityTableModel.getValueAt(row, 2).toString()),
-                promptRequiredDefault("Address", facilityTableModel.getValueAt(row, 3).toString()),
-                promptRequiredDefault("Phone Number", facilityTableModel.getValueAt(row, 4).toString())
-        );
+        facilityTableModel.getValueAt(row, 0).toString(), // facility_id
+
+        promptRequiredDefault(
+                "Facility Name",
+                facilityTableModel.getValueAt(row, 1).toString()
+        ),
+
+        promptRequiredDefault(
+                "Facility Type",
+                facilityTableModel.getValueAt(row, 2).toString()
+        ),
+
+        promptRequiredDefault(
+                "Address",
+                facilityTableModel.getValueAt(row, 3).toString()
+        ),
+
+        promptRequiredDefault(
+                "Postcode",
+                facilityTableModel.getValueAt(row, 4).toString()
+        ),
+
+        promptRequiredDefault(
+                "Phone Number",
+                facilityTableModel.getValueAt(row, 5).toString()
+        ),
+
+        promptRequiredDefault(
+                "Email",
+                facilityTableModel.getValueAt(row, 6).toString()
+        ),
+
+        promptRequiredDefault(
+                "Opening Hours",
+                facilityTableModel.getValueAt(row, 7).toString()
+        ),
+
+        promptRequiredDefault(
+                "Manager Name",
+                facilityTableModel.getValueAt(row, 8).toString()
+        ),
+
+        Integer.parseInt(
+                promptRequiredDefault(
+                        "Capacity",
+                        facilityTableModel.getValueAt(row, 9).toString()
+                )
+        ),
+
+        promptRequiredDefault(
+                "Specialities Offered",
+                facilityTableModel.getValueAt(row, 10).toString()
+        )
+);
+
 
         facilityRepository.updateFacility(updated);
         loadFacilities();

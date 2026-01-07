@@ -23,6 +23,22 @@ import java.util.List;
 public class FacilityRepository {
 
     /** In-memory list of facilities */
+private final List<Facility> facilities = new ArrayList<>();
+
+    /**
+ * Returns all facilities currently loaded in memory.
+ * Used by the View layer to populate tables.
+ */
+public List<Facility> getAllFacilities() {
+    return facilities;
+}
+
+
+
+    private static final String DELIMITER = ",";
+
+
+    /** In-memory list of facilities */
     private final List<Facility> facilityList = new ArrayList<>();
 
     /** CSV file path */
@@ -31,35 +47,52 @@ public class FacilityRepository {
     /**
      * Load facilities from CSV.
      */
-    public void load(String filePath) throws IOException {
-        this.sourceFilePath = filePath;
-        facilityList.clear();
+public void load(String filePath) throws IOException {
 
-        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+    facilities.clear();
 
-            String header = br.readLine(); // skip header
-            if (header == null) return;
+    try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
 
-            String line;
-            while ((line = br.readLine()) != null) {
+        // Skip header
+        br.readLine();
 
-                if (line.trim().isEmpty()) continue;
+        String line;
+        while ((line = br.readLine()) != null) {
 
-                String[] cols = line.split(",", -1);
-                if (cols.length < 5) continue;
+            String[] cols = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
 
-                Facility facility = new Facility(
-                        cols[0].trim(), // facilityId
-                        cols[1].trim(), // name
-                        cols[2].trim(), // type
-                        cols[3].trim(), // address
-                        cols[4].trim()  // phoneNumber
-                );
 
-                facilityList.add(facility);
+            // SAFELY parse capacity
+            int capacity = 0;
+            String capacityRaw = cols[10].replace("\"", "").trim();
+            if (!capacityRaw.isEmpty() && capacityRaw.matches("\\d+")) {
+                capacity = Integer.parseInt(capacityRaw);
             }
+
+            Facility facility = new Facility(
+        cols[0].replace("\"", "").trim(),   // facility_id
+        cols[1].replace("\"", "").trim(),   // facility_name
+        cols[2].replace("\"", "").trim(),   // facility_type
+        cols[3].replace("\"", "").trim(),   // address
+        cols[4].replace("\"", "").trim(),   // postcode
+        cols[5].replace("\"", "").trim(),   // phone_number
+        cols[6].replace("\"", "").trim(),   // email
+        cols[7].replace("\"", "").trim(),   // opening_hours
+        cols[8].replace("\"", "").trim(),   // manager_name
+        Integer.parseInt(cols[9].replace("\"", "").trim()), // capacity
+        cols[10].replace("\"", "").trim()   // specialities_offered
+);
+
+            
+
+            facilities.add(facility);
         }
     }
+}
+
+
+    
+
 
     /**
      * Return all facilities.
@@ -115,6 +148,8 @@ public class FacilityRepository {
             throw new IllegalArgumentException("Facility not found.");
         }
 
+        
+
         saveToCsv();
     }
 
@@ -136,7 +171,7 @@ public class FacilityRepository {
     /**
      * Persist facilities back to CSV.
      */
-    private void saveToCsv() throws IOException {
+        private void saveToCsv() throws IOException {
 
         if (sourceFilePath == null) {
             throw new IllegalStateException("Call load() before saving.");
@@ -149,13 +184,20 @@ public class FacilityRepository {
             writer.newLine();
 
             for (Facility f : facilityList) {
-                writer.write(String.join(",",
-                        safe(f.getFacilityId()),
-                        safe(f.getName()),
-                        safe(f.getType()),
-                        safe(f.getAddress()),
-                        safe(f.getPhoneNumber())
-                ));
+                writer.write(String.join(DELIMITER,
+                safe(f.getFacilityId()),
+                safe(f.getFacilityName()),
+                safe(f.getFacilityType()),
+                safe(f.getAddress()),
+                safe(f.getPostcode()),
+                safe(f.getPhoneNumber()),
+                safe(f.getEmail()),
+                safe(f.getOpeningHours()),
+                safe(f.getManagerName()),
+                safe(String.valueOf(f.getCapacity())),
+                safe(f.getSpecialitiesOffered())
+));
+
                 writer.newLine();
             }
         }
