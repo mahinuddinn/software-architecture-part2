@@ -6,6 +6,7 @@ import model.Clinician;
 import model.Prescription;
 import model.Referral;
 import model.Staff;
+import model.UserSession;
 import model.Facility;
 
 import repository.PatientRepository;
@@ -152,6 +153,9 @@ public class MainFrame extends JFrame {
         tabs.addTab("Staff", createStaffPanel());
         tabs.addTab("Facilities", createFacilityPanel());
         tabs.addTab("Appointments", createAppointmentPanel());
+
+        // Apply-Role-Based-Access Control (RBAC)
+        applyRolePermissions(tabs);
 
         add(tabs, BorderLayout.CENTER);
     }
@@ -4058,6 +4062,41 @@ private boolean showMissingFieldsPopup(String title, String... fields) {
 
     return false; // validation PASSED
 }
+
+/**
+ * Enables / disables tabs based on the logged-in user role.
+ * Updated to include Appointments tab (Part B).
+ */
+private void applyRolePermissions(JTabbedPane tabs) {
+
+    switch (UserSession.getRole()) {
+
+        case PATIENT:
+            tabs.setEnabledAt(1, false); // Clinicians
+            tabs.setEnabledAt(2, false); // Prescriptions
+            tabs.setEnabledAt(3, false); // Referrals
+            tabs.setEnabledAt(4, false); // Staff
+            tabs.setEnabledAt(5, false); // Facilities
+            break;
+
+        case CLINICIAN:
+            tabs.setEnabledAt(4, false); // Staff
+            tabs.setEnabledAt(5, false); // Facilities
+            break;
+
+        case DOCTOR:
+            // Full access
+            break;
+
+        case STAFF:
+            tabs.setEnabledAt(0, false); // Patients
+            tabs.setEnabledAt(2, false); // Prescriptions
+            tabs.setEnabledAt(3, false); // Referrals
+            break;
+    }
+}
+
+
 
 
 

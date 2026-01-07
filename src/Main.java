@@ -1,11 +1,10 @@
-import view.MainFrame;
+import view.LoginFrame;
 
 public class Main {
     public static void main(String[] args) {
 
         javax.swing.SwingUtilities.invokeLater(() -> {
-            MainFrame frame = new MainFrame();
-            frame.setVisible(true);
+            new LoginFrame();   // Launch login first
         });
 
     }
