@@ -17,53 +17,54 @@ public class Referral {
        CORE IDENTIFIERS
        ========================= */
 
-    /** Unique referral identifier (e.g. R001) */
-    private String referralId;
+// Unique identifier for the referral
+private String referralId;
 
-    /** NHS number of the patient */
-    private String patientNhsNumber;
+// Identifier for the patient being referred (e.g. NHS number or internal ID)
+private String patientId;
 
-    /** Clinician who initiated the referral */
-    private String referringClinicianId;
+// ID of the clinician who initiated the referral
+private String referringClinicianId;
 
-    /* =========================
-       FACILITY DETAILS
-       ========================= */
+// ID of the clinician to whom the patient is being referred
+private String referredToClinicianId;
 
-    /** Facility referring from (e.g. GP surgery / clinic) */
-    private String fromFacilityId;
+// ID of the facility where the referral originated
+private String referringFacilityId;
 
-    /** Facility referred to (e.g. hospital / department) */
-    private String toFacilityId;
+// ID of the facility receiving the referral
+private String referredToFacilityId;
 
-    /* =========================
-       CLINICAL DETAILS
-       ========================= */
+// Date the referral was made
+private String referralDate;
 
-    /** Short reason for referral */
-    private String referralReason;
+// Urgency level of the referral (e.g. Routine, Urgent, Emergency)
+private String urgencyLevel;
 
-    /** Detailed clinical summary */
-    private String clinicalSummary;
+// Reason for making the referral
+private String referralReason;
 
-    /** Requested tests or investigations */
-    private String requestedInvestigations;
+// Clinical summary describing the patient's condition
+private String clinicalSummary;
 
-    /** Urgency level (Routine / Urgent / Non-urgent) */
-    private String urgencyLevel;
+// Any investigations requested as part of the referral
+private String requestedInvestigations;
 
-    /** Current referral status (Pending / Completed / New) */
-    private String status;
+// Current status of the referral (e.g. Pending, Accepted, Completed)
+private String status;
 
-    /** Free-text notes */
-    private String notes;
+// Associated appointment ID, if an appointment has been scheduled
+private String appointmentId;
 
-    /* =========================
-       DATES
-       ========================= */
+// Additional notes added by clinicians or administrators
+private String notes;
 
-    /** Date the referral was created */
-    private String referralDate;
+// Date the referral record was created
+private String createdDate;
+
+// Date the referral record was last updated
+private String lastUpdated;
+
 
     /**
      * FULL CONSTRUCTOR
@@ -74,82 +75,111 @@ public class Referral {
      *  - MainFrame referral creation
      */
     public Referral(
-            String referralId,
-            String patientNhsNumber,
-            String referringClinicianId,
-            String fromFacilityId,
-            String toFacilityId,
-            String referralReason,
-            String clinicalSummary,
-            String requestedInvestigations,
-            String urgencyLevel,
-            String status,
-            String notes,
-            String referralDate
-    ) {
+        String referralId,
+        String patientId,
+        String referringClinicianId,
+        String referredToClinicianId,
+        String referringFacilityId,
+        String referredToFacilityId,
+        String referralDate,
+        String urgencyLevel,
+        String referralReason,
+        String clinicalSummary,
+        String requestedInvestigations,
+        String status,
+        String appointmentId,
+        String notes,
+        String createdDate,
+        String lastUpdated
+) {
         this.referralId = referralId;
-        this.patientNhsNumber = patientNhsNumber;
+        this.patientId = patientId;
         this.referringClinicianId = referringClinicianId;
-        this.fromFacilityId = fromFacilityId;
-        this.toFacilityId = toFacilityId;
+        this.referredToClinicianId = referredToClinicianId;
+        this.referringFacilityId = referringFacilityId;
+        this.referredToFacilityId = referredToFacilityId;
+        this.referralDate = referralDate;
+        this.urgencyLevel = urgencyLevel;
         this.referralReason = referralReason;
         this.clinicalSummary = clinicalSummary;
         this.requestedInvestigations = requestedInvestigations;
-        this.urgencyLevel = urgencyLevel;
         this.status = status;
+        this.appointmentId = appointmentId;
         this.notes = notes;
-        this.referralDate = referralDate;
-    }
+        this.createdDate = createdDate;
+        this.lastUpdated = lastUpdated;
+}
+
 
     /* =========================
        GETTERS (USED BY VIEW)
        ========================= */
 
-    public String getReferralId() {
-        return referralId;
-    }
+/* =========================
+   GETTERS (USED BY VIEW)
+   ========================= */
 
-    public String getPatientNhsNumber() {
-        return patientNhsNumber;
-    }
+public String getReferralId() {
+    return referralId;
+}
 
-    public String getReferringClinicianId() {
-        return referringClinicianId;
-    }
+public String getPatientId() {
+    return patientId;
+}
 
-    public String getFromFacilityId() {
-        return fromFacilityId;
-    }
+public String getReferringClinicianId() {
+    return referringClinicianId;
+}
 
-    public String getToFacilityId() {
-        return toFacilityId;
-    }
+public String getReferredToClinicianId() {
+    return referredToClinicianId;
+}
 
-    public String getReferralReason() {
-        return referralReason;
-    }
+public String getReferringFacilityId() {
+    return referringFacilityId;
+}
 
-    public String getClinicalSummary() {
-        return clinicalSummary;
-    }
+public String getReferredToFacilityId() {
+    return referredToFacilityId;
+}
 
-    public String getRequestedInvestigations() {
-        return requestedInvestigations;
-    }
+public String getReferralDate() {
+    return referralDate;
+}
 
-    public String getUrgencyLevel() {
-        return urgencyLevel;
-    }
+public String getUrgencyLevel() {
+    return urgencyLevel;
+}
 
-    public String getStatus() {
-        return status;
-    }
+public String getReferralReason() {
+    return referralReason;
+}
 
-    public String getNotes() {
-        return notes;
-    }
+public String getClinicalSummary() {
+    return clinicalSummary;
+}
 
-    public String getReferralDate() {
-        return referralDate;
-    }
+public String getRequestedInvestigations() {
+    return requestedInvestigations;
+}
+
+public String getStatus() {
+    return status;
+}
+
+public String getAppointmentId() {
+    return appointmentId;
+}
+
+public String getNotes() {
+    return notes;
+}
+
+public String getCreatedDate() {
+    return createdDate;
+}
+
+public String getLastUpdated() {
+    return lastUpdated;
+}
 }

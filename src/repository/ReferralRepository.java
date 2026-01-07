@@ -37,43 +37,47 @@ public class ReferralRepository {
     /**
      * Loads referrals from CSV into memory.
      */
-public void load(String filePath) throws IOException {
+    public void load(String filePath) throws IOException {
 
-    referrals.clear();
+        this.sourceFilePath = filePath; // ✅ IMPORTANT
+        referrals.clear();
 
-    try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
 
-        String header = br.readLine(); // skip header
-        if (header == null) return;
+            String header = br.readLine(); // skip header
+            if (header == null) return;
 
-        String line;
-        while ((line = br.readLine()) != null) {
+            String line;
+            while ((line = br.readLine()) != null) {
 
-            String[] cols = line.split(",", -1);
+                String[] cols = line.split(",", -1);
 
-            // Must have at least 12 columns
-            if (cols.length < 12) continue;
+                // Must have at least 16 columns
+                if (cols.length < 16) continue;
 
-            Referral referral = new Referral(
-                    cols[0].trim(),  // referralId
-                    cols[1].trim(),  // patientId
-                    cols[2].trim(),  // referringClinicianId
-                    cols[3].trim(),  // fromFacilityId
-                    cols[4].trim(),  // toFacilityId
-                    cols[8].trim(),  // clinicalSummary
-                    cols[6].trim(),  // urgency
-                    cols[5].trim(),  // referralDate
-                    cols[7].trim(),  // referralReason
-                    cols[9].trim(),  // investigations
-                    cols[10].trim(), // status
-                    cols[11].trim()  // notes
-            );
+                Referral r = new Referral(
+                        cols[0],   // referral_id
+                        cols[1],   // patient_id
+                        cols[2],   // referring_clinician_id
+                        cols[3],   // referred_to_clinician_id
+                        cols[4],   // referring_facility_id
+                        cols[5],   // referred_to_facility_id
+                        cols[6],   // referral_date
+                        cols[7],   // urgency_level
+                        cols[8],   // referral_reason
+                        cols[9],   // clinical_summary
+                        cols[10],  // requested_investigations
+                        cols[11],  // status
+                        cols[12],  // appointment_id
+                        cols[13],  // notes
+                        cols[14],  // created_date
+                        cols[15]   // last_updated
+                );
 
-            referrals.add(referral);
+                referrals.add(r); // ✅ correct variable
+            }
         }
     }
-}
-
 
     /* =====================================================
        ACCESS
@@ -144,31 +148,31 @@ public void load(String filePath) throws IOException {
 
             // Header MUST match original CSV
             writer.write(
-                "referral_id,patient_id,referring_clinician_id,referred_to_clinician_id," +
-                "referring_facility_id,referred_to_facility_id,referral_date,urgency_level," +
-                "referral_reason,clinical_summary,requested_investigations,status," +
-                "appointment_id,notes,created_date,last_updated"
+                    "referral_id,patient_id,referring_clinician_id,referred_to_clinician_id," +
+                    "referring_facility_id,referred_to_facility_id,referral_date,urgency_level," +
+                    "referral_reason,clinical_summary,requested_investigations,status," +
+                    "appointment_id,notes,created_date,last_updated"
             );
             writer.newLine();
 
             for (Referral r : referrals) {
                 writer.write(String.join(",",
                         safe(r.getReferralId()),
-                        safe(r.getPatientNhsNumber()),
+                        safe(r.getPatientId()),
                         safe(r.getReferringClinicianId()),
-                        "", // referred_to_clinician_id (optional)
-                        safe(r.getFromFacilityId()),
-                        safe(r.getToFacilityId()),
+                        safe(r.getReferredToClinicianId()),
+                        safe(r.getReferringFacilityId()),
+                        safe(r.getReferredToFacilityId()),
                         safe(r.getReferralDate()),
                         safe(r.getUrgencyLevel()),
                         safe(r.getReferralReason()),
                         safe(r.getClinicalSummary()),
                         safe(r.getRequestedInvestigations()),
                         safe(r.getStatus()),
-                        "", // appointment_id
+                        safe(r.getAppointmentId()),
                         safe(r.getNotes()),
-                        safe(r.getReferralDate()), // created_date
-                        ""  // last_updated
+                        safe(r.getCreatedDate()),
+                        safe(r.getLastUpdated())
                 ));
                 writer.newLine();
             }

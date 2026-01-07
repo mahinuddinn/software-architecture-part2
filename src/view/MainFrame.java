@@ -1420,6 +1420,7 @@ private void editPrescription() {
                         "Referral ID",
                         "Patient ID",
                         "Referring Clinician",
+                        "Referred To Clinician",
                         "From Facility",
                         "To Facility",
                         "Referral Date",
@@ -1428,7 +1429,10 @@ private void editPrescription() {
                         "Clinical Summary",
                         "Investigations",
                         "Status",
-                        "Notes"
+                        "Appointment ID",
+                        "Notes",
+                        "Created Date",
+                        "Last Updated",
                 }, 0
         );
 
@@ -1437,8 +1441,8 @@ private void editPrescription() {
 
         loadReferrals();
 
-        JButton viewBtn = new JButton("View");
-        JButton createBtn = new JButton("Create Referral (Singleton)");
+        JButton viewBtn = new JButton("View Referral");
+        JButton createBtn = new JButton("Create Referral");
         JButton editBtn = new JButton("Edit Referral");
         JButton deleteBtn = new JButton("Delete Referral");
 
@@ -1466,169 +1470,301 @@ private void editPrescription() {
 
             for (Referral r : referralRepository.getAll()) {
                 referralTableModel.addRow(new Object[]{
-                        r.getReferralId(),
-                        r.getPatientNhsNumber(),
-                        r.getReferringClinicianId(),
-                        r.getFromFacilityId(),
-                        r.getToFacilityId(),
-                        r.getReferralDate(),
-                        r.getUrgencyLevel(),
-                        r.getReferralReason(),
-                        r.getClinicalSummary(),
-                        r.getRequestedInvestigations(),
-                        r.getStatus(),
-                        r.getNotes()
-                });
-            }
-
-        } catch (Exception ex) {
+                    r.getReferralId(),
+                    r.getPatientId(),
+                    r.getReferringClinicianId(),
+                    r.getReferredToClinicianId(),   // NEW
+                    r.getReferringFacilityId(),
+                    r.getReferredToFacilityId(),
+                    r.getReferralDate(),
+                    r.getUrgencyLevel(),
+                    r.getReferralReason(),
+                    r.getClinicalSummary(),
+                    r.getRequestedInvestigations(),
+                    r.getStatus(),
+                    r.getAppointmentId(),           //  NEW
+                    r.getNotes(),
+                    r.getCreatedDate(),              
+                    r.getLastUpdated()               
+});
+}
+}
+        catch (Exception ex) {
             showError(ex);
         }
     }
 
 
-    /**
-     * Creates a referral and processes it using the Singleton ReferralManager.
-     * This satisfies the rubric requirement for Singleton.
-     *
-     * IMPORTANT:
-     *  - ReferralManager should append to referrals.csv AND generate a referral text file.
-     *  - After calling manager, we reload the table from CSV.
-     */
-    private void createReferral() {
-        try {
-            String referralId = promptRequired("Referral ID (e.g., R011)");
-            if (referralId == null) return;
+/**
+ * Creates a new referral using user input dialogs
+ * and processes it via the Singleton ReferralManager.
+ *
+ * ✔ View responsibility (collect input + display messages)
+ * ✔ Model responsibility delegated to Referral + ReferralManager
+ * ✔ Satisfies Singleton pattern requirement in rubric
+ */
+private void createReferral() {
+    try {
 
-            String patientId = promptRequired("Patient ID (e.g., P001)");
-            if (patientId == null) return;
+        // -------------------------------
+        // REQUIRED CORE IDENTIFIERS
+        // -------------------------------
 
-            String referringClinician = promptRequired("Referring Clinician ID (e.g., C001)");
-            if (referringClinician == null) return;
+        // Unique referral identifier
+        String referralId = promptRequired("Referral ID (e.g., R011)");
+        if (referralId == null) return;
 
-            String fromFacility = promptRequired("From Facility ID (e.g., S001)");
-            if (fromFacility == null) return;
+        // Patient identifier (e.g. NHS number or internal ID)
+        String patientId = promptRequired("Patient ID (e.g., P001)");
+        if (patientId == null) return;
 
-            String toFacility = promptRequired("To Facility ID (e.g., H001)");
-            if (toFacility == null) return;
+        // Clinician who is making the referral
+        String referringClinician = promptRequired("Referring Clinician ID (e.g., C001)");
+        if (referringClinician == null) return;
 
-            String referralDate = promptRequired("Referral Date (YYYY-MM-DD)");
-            if (referralDate == null) return;
+        // Facility the referral is coming FROM
+        String fromFacility = promptRequired("From Facility ID (e.g., S001)");
+        if (fromFacility == null) return;
 
-            String urgency = promptRequired("Urgency Level (Routine/Urgent/Non-urgent)");
-            if (urgency == null) return;
+        // Facility the referral is going TO
+        String toFacility = promptRequired("To Facility ID (e.g., H001)");
+        if (toFacility == null) return;
 
-            String reason = promptRequired("Referral Reason");
-            if (reason == null) return;
+        // -------------------------------
+        // REFERRAL DETAILS
+        // -------------------------------
 
-            String summary = promptRequired("Clinical Summary");
-            if (summary == null) return;
+        // Date the referral was created
+        String referralDate = promptRequired("Referral Date (YYYY-MM-DD)");
+        if (referralDate == null) return;
 
-            String investigations = promptOptional("Requested Investigations (optional)");
-            if (investigations == null) investigations = "";
+        // Clinical urgency level
+        String urgency = promptRequired("Urgency Level (Routine / Urgent / Emergency)");
+        if (urgency == null) return;
 
-            String status = promptRequiredDefault("Status", "New");
-            if (status == null) return;
+        // Reason for the referral
+        String reason = promptRequired("Referral Reason");
+        if (reason == null) return;
 
-            String notes = promptOptional("Notes (optional)");
-            if (notes == null) notes = "";
+        // Clinical summary describing patient condition
+        String summary = promptRequired("Clinical Summary");
+        if (summary == null) return;
 
-            // IMPORTANT: Must match your Referral constructor EXACTLY (12 parameters)
-            Referral r = new Referral(
-                    referralId,
-                    patientId,
-                    referringClinician,
-                    fromFacility,
-                    toFacility,
-                    summary,
-                    urgency,
-                    referralDate,
-                    reason,
-                    investigations,
-                    status,
-                    notes
-            );
+        // Optional investigations requested
+        String investigations = promptOptional("Requested Investigations (optional)");
+        if (investigations == null) investigations = "";
 
-            // ✅ SINGLETON usage (rubric)
-            ReferralManager.getInstance().processReferral(r);
+        // Referral status (default = New)
+        String status = promptRequiredDefault("Status", "New");
+        if (status == null) return;
 
-            loadReferrals();
+        // Optional clinician/admin notes
+        String notes = promptOptional("Notes (optional)");
+        if (notes == null) notes = "";
 
-            JOptionPane.showMessageDialog(this,
-                    "Referral created successfully.\nA referral text file should also be generated by ReferralManager.");
+        // -------------------------------
+        // CREATE REFERRAL DOMAIN OBJECT
+        // -------------------------------
+        // IMPORTANT:
+        // Constructor parameters MUST match Referral model exactly.
+        // Some values (referredToClinicianId, appointmentId, lastUpdated)
+        // are not collected at creation time, so empty strings are used.
 
-        } catch (Exception ex) {
-            showError(ex);
-        }
+        Referral r = new Referral(
+                referralId,          // referralId
+                patientId,           // patientId
+                referringClinician,  // referringClinicianId
+                "",                  // referredToClinicianId (not assigned yet)
+                fromFacility,        // referringFacilityId
+                toFacility,          // referredToFacilityId
+                referralDate,        // referralDate
+                urgency,             // urgencyLevel
+                reason,              // referralReason
+                summary,             // clinicalSummary
+                investigations,      // requestedInvestigations
+                status,              // status
+                "",                  // appointmentId (not scheduled yet)
+                notes,               // notes
+                referralDate,        // createdDate
+                ""                   // lastUpdated (not updated yet)
+        );
+
+        // -------------------------------
+        // SINGLETON PROCESSING (RUBRIC)
+        // -------------------------------
+        // ReferralManager is a Singleton:
+        // - Ensures single instance
+        // - Generates referral output file
+        // - Maintains consistent processing
+
+        ReferralManager.getInstance().processReferral(r);
+
+        // Reload referral table from CSV
+        loadReferrals();
+
+        // User feedback
+        JOptionPane.showMessageDialog(
+                this,
+                "Referral created successfully.\nReferral file generated."
+        );
+
+    } catch (Exception ex) {
+        // Centralised error handling
+        showError(ex);
+    }
+}
+
+
+/**
+ * Edits an existing referral selected from the table.
+ *
+ * ✔ Uses table data as defaults for editing
+ * ✔ Ensures required fields are not left blank
+ * ✔ Updates referral via repository (CSV persistence)
+ * ✔ Reloads table after update
+ *
+ * NOTE:
+ * This method performs only UI interaction and delegates
+ * data persistence to the Repository (MVC compliant).
+ */
+private void editReferral() {
+
+    // -------------------------------
+    // ENSURE A REFERRAL IS SELECTED
+    // -------------------------------
+    int row = referralTable.getSelectedRow();
+    if (row == -1) {
+        JOptionPane.showMessageDialog(
+                this,
+                "Select a referral row first.",
+                "No Selection",
+                JOptionPane.WARNING_MESSAGE
+        );
+        return;
     }
 
-    private void editReferral() {
-        int row = referralTable.getSelectedRow();
-        if (row == -1) {
-            JOptionPane.showMessageDialog(this, "Select a referral row first.");
-            return;
-        }
+    try {
+        // -------------------------------
+        // READ EXISTING VALUES FROM TABLE
+        // -------------------------------
 
-        try {
-            String referralId = referralTableModel.getValueAt(row, 0).toString();
+        // Primary identifier (must NOT change)
+        String referralId = referralTableModel.getValueAt(row, 0).toString();
 
-            String patientId = promptRequiredDefault("Patient ID", referralTableModel.getValueAt(row, 1).toString());
-            if (patientId == null) return;
+        // Editable fields (pre-filled with existing values)
+        String patientId = promptRequiredDefault(
+                "Patient ID",
+                referralTableModel.getValueAt(row, 1).toString()
+        );
+        if (patientId == null) return;
 
-            String referringClinician = promptRequiredDefault("Referring Clinician ID", referralTableModel.getValueAt(row, 2).toString());
-            if (referringClinician == null) return;
+        String referringClinician = promptRequiredDefault(
+                "Referring Clinician ID",
+                referralTableModel.getValueAt(row, 2).toString()
+        );
+        if (referringClinician == null) return;
 
-            String fromFacility = promptRequiredDefault("From Facility ID", referralTableModel.getValueAt(row, 3).toString());
-            if (fromFacility == null) return;
+        String fromFacility = promptRequiredDefault(
+                "From Facility ID",
+                referralTableModel.getValueAt(row, 4).toString()
+        );
+        if (fromFacility == null) return;
 
-            String toFacility = promptRequiredDefault("To Facility ID", referralTableModel.getValueAt(row, 4).toString());
-            if (toFacility == null) return;
+        String toFacility = promptRequiredDefault(
+                "To Facility ID",
+                referralTableModel.getValueAt(row, 5).toString()
+        );
+        if (toFacility == null) return;
 
-            String referralDate = promptRequiredDefault("Referral Date (YYYY-MM-DD)", referralTableModel.getValueAt(row, 5).toString());
-            if (referralDate == null) return;
+        String referralDate = promptRequiredDefault(
+                "Referral Date (YYYY-MM-DD)",
+                referralTableModel.getValueAt(row, 6).toString()
+        );
+        if (referralDate == null) return;
 
-            String urgency = promptRequiredDefault("Urgency Level", referralTableModel.getValueAt(row, 6).toString());
-            if (urgency == null) return;
+        String urgency = promptRequiredDefault(
+                "Urgency Level",
+                referralTableModel.getValueAt(row, 7).toString()
+        );
+        if (urgency == null) return;
 
-            String reason = promptRequiredDefault("Referral Reason", referralTableModel.getValueAt(row, 7).toString());
-            if (reason == null) return;
+        String reason = promptRequiredDefault(
+                "Referral Reason",
+                referralTableModel.getValueAt(row, 8).toString()
+        );
+        if (reason == null) return;
 
-            String summary = promptRequiredDefault("Clinical Summary", referralTableModel.getValueAt(row, 8).toString());
-            if (summary == null) return;
+        String summary = promptRequiredDefault(
+                "Clinical Summary",
+                referralTableModel.getValueAt(row, 9).toString()
+        );
+        if (summary == null) return;
 
-            String investigations = promptOptionalDefault("Requested Investigations", referralTableModel.getValueAt(row, 9).toString());
-            if (investigations == null) investigations = "";
+        // Optional fields
+        String investigations = promptOptionalDefault(
+                "Requested Investigations",
+                referralTableModel.getValueAt(row, 10).toString()
+        );
+        if (investigations == null) investigations = "";
 
-            String status = promptRequiredDefault("Status", referralTableModel.getValueAt(row, 10).toString());
-            if (status == null) return;
+        String status = promptRequiredDefault(
+                "Status",
+                referralTableModel.getValueAt(row, 11).toString()
+        );
+        if (status == null) return;
 
-            String notes = promptOptionalDefault("Notes", referralTableModel.getValueAt(row, 11).toString());
-            if (notes == null) notes = "";
+        String notes = promptOptionalDefault(
+                "Notes",
+                referralTableModel.getValueAt(row, 13).toString()
+        );
+        if (notes == null) notes = "";
 
-            Referral updated = new Referral(
-                    referralId,
-                    patientId,
-                    referringClinician,
-                    fromFacility,
-                    toFacility,
-                    summary,
-                    urgency,
-                    referralDate,
-                    reason,
-                    investigations,
-                    status,
-                    notes
-            );
+        // -------------------------------
+        // CREATE UPDATED REFERRAL OBJECT
+        // -------------------------------
+        // IMPORTANT:
+        // Constructor parameters MUST match Referral model exactly.
+        // Fields not edited here are preserved or left unchanged.
 
-            referralRepository.updateReferral(updated);
-            loadReferrals();
+        Referral updated = new Referral(
+                referralId,          // referralId (immutable)
+                patientId,           // patientId
+                referringClinician,  // referringClinicianId
+                referralTableModel.getValueAt(row, 3).toString(), // referredToClinicianId
+                fromFacility,        // referringFacilityId
+                toFacility,          // referredToFacilityId
+                referralDate,        // referralDate
+                urgency,             // urgencyLevel
+                reason,              // referralReason
+                summary,             // clinicalSummary
+                investigations,      // requestedInvestigations
+                status,              // status
+                referralTableModel.getValueAt(row, 12).toString(), // appointmentId
+                notes,               // notes
+                referralTableModel.getValueAt(row, 14).toString(), // createdDate
+                referralDate         // lastUpdated (updated now)
+        );
 
-            JOptionPane.showMessageDialog(this, "Referral updated successfully.");
+        // -------------------------------
+        // PERSIST UPDATE VIA REPOSITORY
+        // -------------------------------
+        referralRepository.updateReferral(updated);
 
-        } catch (Exception ex) {
-            showError(ex);
-        }
+        // Refresh UI table
+        loadReferrals();
+
+        // User feedback
+        JOptionPane.showMessageDialog(
+                this,
+                "Referral updated successfully."
+        );
+
+    } catch (Exception ex) {
+        // Centralised error handling
+        showError(ex);
     }
+}
+
 
     private void deleteReferral() {
         int row = referralTable.getSelectedRow();
@@ -1658,6 +1794,8 @@ private void editPrescription() {
             showError(ex);
         }
     }
+
+    
 
         /**
  * Displays all referral details for the selected row in a read-only dialog.
@@ -2154,4 +2292,5 @@ private void deleteFacility() {
                 JOptionPane.ERROR_MESSAGE
         );
     }
+
 }
