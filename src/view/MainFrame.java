@@ -1616,154 +1616,225 @@ private void createReferral() {
 
 
 /**
- * Edits an existing referral selected from the table.
+ * Edits an existing referral using a collective form.
  *
- * ✔ Uses table data as defaults for editing
- * ✔ Ensures required fields are not left blank
- * ✔ Updates referral via repository (CSV persistence)
- * ✔ Reloads table after update
- *
- * NOTE:
- * This method performs only UI interaction and delegates
- * data persistence to the Repository (MVC compliant).
+ * ✔ Field-specific validation
+ * ✔ Dropdowns for controlled values
+ * ✔ Clear popup listing exactly which fields are missing
  */
 private void editReferral() {
 
-    // -------------------------------
-    // ENSURE A REFERRAL IS SELECTED
-    // -------------------------------
+    // ---------------------------------
+    // ENSURE A ROW IS SELECTED
+    // ---------------------------------
     int row = referralTable.getSelectedRow();
     if (row == -1) {
         JOptionPane.showMessageDialog(
                 this,
-                "Select a referral row first.",
+                "Please select a referral first.",
                 "No Selection",
                 JOptionPane.WARNING_MESSAGE
         );
         return;
     }
 
+    // ---------------------------------
+    // CREATE FORM FIELDS (PRE-FILLED)
+    // ---------------------------------
+    JTextField referralIdField =
+            new JTextField(referralTableModel.getValueAt(row, 0).toString());
+    referralIdField.setEditable(false);
+
+    JTextField patientIdField =
+            new JTextField(referralTableModel.getValueAt(row, 1).toString());
+
+    JTextField referringClinicianField =
+            new JTextField(referralTableModel.getValueAt(row, 2).toString());
+
+    JTextField referredToClinicianField =
+            new JTextField(referralTableModel.getValueAt(row, 3).toString());
+
+    JTextField fromFacilityField =
+            new JTextField(referralTableModel.getValueAt(row, 4).toString());
+
+    JTextField toFacilityField =
+            new JTextField(referralTableModel.getValueAt(row, 5).toString());
+
+    JTextField referralDateField =
+            new JTextField(referralTableModel.getValueAt(row, 6).toString());
+
+    JComboBox<String> urgencyCombo = new JComboBox<>(new String[]{
+            "Routine", "Urgent", "Non-routine"
+    });
+    urgencyCombo.setSelectedItem(
+            referralTableModel.getValueAt(row, 7).toString()
+    );
+
+    JTextField reasonField =
+            new JTextField(referralTableModel.getValueAt(row, 8).toString());
+
+    JTextArea summaryArea =
+            new JTextArea(referralTableModel.getValueAt(row, 9).toString(), 3, 20);
+
+    JTextField investigationsField =
+            new JTextField(referralTableModel.getValueAt(row, 10).toString());
+
+    JComboBox<String> statusCombo = new JComboBox<>(new String[]{
+            "New", "Pending", "In Progress", "Completed"
+    });
+    statusCombo.setSelectedItem(
+            referralTableModel.getValueAt(row, 11).toString()
+    );
+
+    JTextField appointmentIdField =
+            new JTextField(referralTableModel.getValueAt(row, 12).toString());
+
+    JTextArea notesArea =
+            new JTextArea(referralTableModel.getValueAt(row, 13).toString(), 3, 20);
+
+    // ---------------------------------
+    // BUILD FORM PANEL
+    // ---------------------------------
+    JPanel panel = new JPanel(new GridLayout(0, 2, 8, 8));
+
+    panel.add(new JLabel("Referral ID"));
+    panel.add(referralIdField);
+
+    panel.add(new JLabel("Patient ID"));
+    panel.add(patientIdField);
+
+    panel.add(new JLabel("Referring Clinician ID"));
+    panel.add(referringClinicianField);
+
+    panel.add(new JLabel("Referred To Clinician ID"));
+    panel.add(referredToClinicianField);
+
+    panel.add(new JLabel("From Facility"));
+    panel.add(fromFacilityField);
+
+    panel.add(new JLabel("To Facility"));
+    panel.add(toFacilityField);
+
+    panel.add(new JLabel("Referral Date (YYYY-MM-DD)"));
+    panel.add(referralDateField);
+
+    panel.add(new JLabel("Urgency Level"));
+    panel.add(urgencyCombo);
+
+    panel.add(new JLabel("Referral Reason"));
+    panel.add(reasonField);
+
+    panel.add(new JLabel("Clinical Summary"));
+    panel.add(new JScrollPane(summaryArea));
+
+    panel.add(new JLabel("Requested Investigations"));
+    panel.add(investigationsField);
+
+    panel.add(new JLabel("Status"));
+    panel.add(statusCombo);
+
+    panel.add(new JLabel("Appointment ID"));
+    panel.add(appointmentIdField);
+
+    panel.add(new JLabel("Notes"));
+    panel.add(new JScrollPane(notesArea));
+
+    // ---------------------------------
+    // SHOW DIALOG
+    // ---------------------------------
+    JScrollPane scrollPane = new JScrollPane(panel);
+    scrollPane.setPreferredSize(new Dimension(500, 450));
+
+    int result = JOptionPane.showConfirmDialog(
+        this,
+        scrollPane,
+        "Edit Referral",
+        JOptionPane.OK_CANCEL_OPTION,
+        JOptionPane.PLAIN_MESSAGE
+);
+
+
+
+    if (result != JOptionPane.OK_OPTION) return;
+
+    // ---------------------------------
+    // FIELD-SPECIFIC VALIDATION
+    // ---------------------------------
+    List<String> missingFields = new ArrayList<>();
+
+    if (patientIdField.getText().trim().isEmpty())
+        missingFields.add("Patient ID");
+
+    if (referringClinicianField.getText().trim().isEmpty())
+        missingFields.add("Referring Clinician ID");
+
+    if (fromFacilityField.getText().trim().isEmpty())
+        missingFields.add("From Facility");
+
+    if (toFacilityField.getText().trim().isEmpty())
+        missingFields.add("To Facility");
+
+    if (referralDateField.getText().trim().isEmpty())
+        missingFields.add("Referral Date");
+
+    if (reasonField.getText().trim().isEmpty())
+        missingFields.add("Referral Reason");
+
+    if (summaryArea.getText().trim().isEmpty())
+        missingFields.add("Clinical Summary");
+
+    if (statusCombo.getSelectedItem() == null)
+        missingFields.add("Status");
+
+    // ---------------------------------
+    // SHOW VALIDATION MESSAGE IF NEEDED
+    // ---------------------------------
+    if (!missingFields.isEmpty()) {
+        JOptionPane.showMessageDialog(
+                this,
+                "Field(s) not filled in:\n\n• " + String.join("\n• ", missingFields),
+                "Validation Error",
+                JOptionPane.WARNING_MESSAGE
+        );
+        return;
+    }
+
     try {
-        // -------------------------------
-        // READ EXISTING VALUES FROM TABLE
-        // -------------------------------
-
-        // Primary identifier (must NOT change)
-        String referralId = referralTableModel.getValueAt(row, 0).toString();
-
-        // Editable fields (pre-filled with existing values)
-        String patientId = promptRequiredDefault(
-                "Patient ID",
-                referralTableModel.getValueAt(row, 1).toString()
-        );
-        if (patientId == null) return;
-
-        String referringClinician = promptRequiredDefault(
-                "Referring Clinician ID",
-                referralTableModel.getValueAt(row, 2).toString()
-        );
-        if (referringClinician == null) return;
-
-        String fromFacility = promptRequiredDefault(
-                "From Facility ID",
-                referralTableModel.getValueAt(row, 4).toString()
-        );
-        if (fromFacility == null) return;
-
-        String toFacility = promptRequiredDefault(
-                "To Facility ID",
-                referralTableModel.getValueAt(row, 5).toString()
-        );
-        if (toFacility == null) return;
-
-        String referralDate = promptRequiredDefault(
-                "Referral Date (YYYY-MM-DD)",
-                referralTableModel.getValueAt(row, 6).toString()
-        );
-        if (referralDate == null) return;
-
-        String urgency = promptRequiredDefault(
-                "Urgency Level",
-                referralTableModel.getValueAt(row, 7).toString()
-        );
-        if (urgency == null) return;
-
-        String reason = promptRequiredDefault(
-                "Referral Reason",
-                referralTableModel.getValueAt(row, 8).toString()
-        );
-        if (reason == null) return;
-
-        String summary = promptRequiredDefault(
-                "Clinical Summary",
-                referralTableModel.getValueAt(row, 9).toString()
-        );
-        if (summary == null) return;
-
-        // Optional fields
-        String investigations = promptOptionalDefault(
-                "Requested Investigations",
-                referralTableModel.getValueAt(row, 10).toString()
-        );
-        if (investigations == null) investigations = "";
-
-        String status = promptRequiredDefault(
-                "Status",
-                referralTableModel.getValueAt(row, 11).toString()
-        );
-        if (status == null) return;
-
-        String notes = promptOptionalDefault(
-                "Notes",
-                referralTableModel.getValueAt(row, 13).toString()
-        );
-        if (notes == null) notes = "";
-
-        // -------------------------------
+        // ---------------------------------
         // CREATE UPDATED REFERRAL OBJECT
-        // -------------------------------
-        // IMPORTANT:
-        // Constructor parameters MUST match Referral model exactly.
-        // Fields not edited here are preserved or left unchanged.
-
+        // ---------------------------------
         Referral updated = new Referral(
-                referralId,          // referralId (immutable)
-                patientId,           // patientId
-                referringClinician,  // referringClinicianId
-                referralTableModel.getValueAt(row, 3).toString(), // referredToClinicianId
-                fromFacility,        // referringFacilityId
-                toFacility,          // referredToFacilityId
-                referralDate,        // referralDate
-                urgency,             // urgencyLevel
-                reason,              // referralReason
-                summary,             // clinicalSummary
-                investigations,      // requestedInvestigations
-                status,              // status
-                referralTableModel.getValueAt(row, 12).toString(), // appointmentId
-                notes,               // notes
+                referralIdField.getText().trim(),
+                patientIdField.getText().trim(),
+                referringClinicianField.getText().trim(),
+                referredToClinicianField.getText().trim(),
+                fromFacilityField.getText().trim(),
+                toFacilityField.getText().trim(),
+                referralDateField.getText().trim(),
+                urgencyCombo.getSelectedItem().toString(),
+                reasonField.getText().trim(),
+                summaryArea.getText().trim(),
+                investigationsField.getText().trim(),
+                statusCombo.getSelectedItem().toString(),
+                appointmentIdField.getText().trim(),
+                notesArea.getText().trim(),
                 referralTableModel.getValueAt(row, 14).toString(), // createdDate
-                referralDate         // lastUpdated (updated now)
+                referralDateField.getText().trim()                // lastUpdated
         );
 
-        // -------------------------------
-        // PERSIST UPDATE VIA REPOSITORY
-        // -------------------------------
         referralRepository.updateReferral(updated);
-
-        // Refresh UI table
         loadReferrals();
 
-        // User feedback
         JOptionPane.showMessageDialog(
                 this,
                 "Referral updated successfully."
         );
 
     } catch (Exception ex) {
-        // Centralised error handling
         showError(ex);
     }
 }
+
 
 
     private void deleteReferral() {
@@ -2272,13 +2343,14 @@ private void deleteFacility() {
     }
 
     /**
-     * Prompt helper for optional fields with default.
-     * Returns null if cancel.
+     * Prompt helper for optional fields with a default value.
+     * - Returns null if the user cancels
+     * - Allows empty input (optional field)
      */
     private String promptOptionalDefault(String label, String defaultVal) {
         String val = JOptionPane.showInputDialog(this, label + ":", defaultVal);
-        if (val == null) return null;
-        return val.trim();
+        if (val == null) return null;   // user cancelled
+        return val.trim();              // may be empty
     }
 
     /**
@@ -2292,5 +2364,7 @@ private void deleteFacility() {
                 JOptionPane.ERROR_MESSAGE
         );
     }
+
+    
 
 }
