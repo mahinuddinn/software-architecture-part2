@@ -6,8 +6,8 @@ RX004,P004,C002,GTN Spray,400mcg,Boots Pharmacy,Collected
 RX005,P006,C004,Metformin,500mg,Boots Pharmacy,Pending
 RX006,P008,C010,Folic Acid,5mg,Boots Pharmacy,Collected
 RX007,P010,C002,Insulin Glargine,100units/ml,Hospital Pharmacy,Pending
-RX008,null,null,null,null,null,null
-RX009,P003,C003,Amlodipine,5mg,Boots Pharmacy,Pending
+RX009,P003,C003,Amlodipine,5mg,Hospital Pharmacy,Pending
 RX010,P005,C005,Atorvastatin,40mg,Boots Pharmacy,Collected
 RX_TEST_001,9999999999,CL001,Paracetamol,500mg,Boots,Pending
 RX011,P011,C011,Paracetamol,50mg,Boots Pharmacy,Pending
+RX012,P005,C013,Aspirin,5mg,Boots Pharmacy,Pending

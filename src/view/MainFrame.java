@@ -13,6 +13,7 @@ import repository.PatientRepository;
 import repository.ClinicianRepository;
 import repository.PrescriptionRepository;
 import repository.ReferralRepository;
+import repository.ReferralWriter;
 import repository.ReferralManager;
 import repository.StaffRepository;
 import repository.FacilityRepository;
@@ -1563,8 +1564,45 @@ private void editPrescription() {
  * ✔ Satisfies Singleton pattern requirement in rubric
  */
 private void createReferral() {
-    showReferralForm(null); // CREATE mode
+
+    // ❌ NO table row selection check here
+
+    Referral newReferral = showReferralForm(null);
+    if (newReferral == null) {
+        return;
+    }
+
+    try {
+    referralRepository.addReferral(newReferral);
+} catch (IOException ex) {
+    JOptionPane.showMessageDialog(
+            this,
+            "Failed to save referral:\n" + ex.getMessage(),
+            "Save Error",
+            JOptionPane.ERROR_MESSAGE
+    );
+    return;
 }
+
+    
+    // 🔔 Simulated email generation
+    ReferralManager manager = ReferralManager.getInstance();
+    String emailContent = manager.generateReferralEmailContent(newReferral);
+
+    try {
+        ReferralWriter.writeReferralEmail(emailContent);
+    } catch (IOException ex) {
+        JOptionPane.showMessageDialog(
+                this,
+                "Referral created, but notification file could not be generated.",
+                "Warning",
+                JOptionPane.WARNING_MESSAGE
+        );
+    }
+
+    loadReferrals();
+}
+
 
 
 
@@ -1618,7 +1656,7 @@ private void editReferral() {
     showReferralForm(existing);
 }
 
-private void showReferralForm(Referral existing) {
+private Referral showReferralForm(Referral existing) {
 
     // ===================== INPUT FIELDS =====================
     JTextField txtReferralId = new JTextField(
@@ -1711,7 +1749,7 @@ private void showReferralForm(Referral existing) {
     JOptionPane.PLAIN_MESSAGE
 );
 
-    if (result != JOptionPane.OK_OPTION) return;
+    if (result != JOptionPane.OK_OPTION) return null;
 
     // ===================== VALIDATION =====================
     List<String> missingFields = new ArrayList<>();
@@ -1734,7 +1772,7 @@ private void showReferralForm(Referral existing) {
                 "Missing Information",
                 JOptionPane.ERROR_MESSAGE
         );
-        return;
+        return null;
     }
 
     // ===================== SAVE =====================
@@ -1756,30 +1794,10 @@ private void showReferralForm(Referral existing) {
             LocalDate.now().toString(),
             LocalDate.now().toString()
     );
+    
+return referral;}
 
-    try {
-    if (existing == null) {
-        referralRepository.addReferral(referral);
-    } else {
-        referralRepository.updateReferral(referral);
-    }
-
-    populateReferralTable();
-
-} catch (IOException e) {
-    JOptionPane.showMessageDialog(
-            this,
-            "Failed to save referral:\n" + e.getMessage(),
-            "Save Error",
-            JOptionPane.ERROR_MESSAGE
-    );
-}
-}
-
-
-
-
-    private void deleteReferral() {
+private void deleteReferral() {
         int row = referralTable.getSelectedRow();
         if (row == -1) {
             JOptionPane.showMessageDialog(this, "Select a referral row first.");
@@ -2056,7 +2074,7 @@ private void viewReferrals() {
 }
 
 private void populateReferralTable() {
-    viewReferrals();
+    loadReferrals();
 }
 
 
