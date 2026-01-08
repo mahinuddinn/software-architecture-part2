@@ -4,7 +4,8 @@ public class Main {
     public static void main(String[] args) {
 
         javax.swing.SwingUtilities.invokeLater(() -> {
-            new LoginFrame();   // Launch login first
+            LoginFrame login = new LoginFrame();
+            login.setVisible(true);
         });
 
     }

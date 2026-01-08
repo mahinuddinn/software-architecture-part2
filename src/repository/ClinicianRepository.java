@@ -176,4 +176,10 @@ public void load(String filePath) throws IOException {
     private String safe(String value) {
         return value == null ? "" : value.replace(",", " ");
     }
+
+    public boolean existsById(String clinicianId) {
+    return clinicians.stream()
+            .anyMatch(c -> c.getClinicianId().equalsIgnoreCase(clinicianId));
+}
+
 }

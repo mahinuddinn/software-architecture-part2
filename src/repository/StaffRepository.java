@@ -269,4 +269,10 @@ public class StaffRepository {
     private String safe(String value) {
         return value == null ? "" : value.replace(",", " ");
     }
+
+    public boolean existsById(String staffId) {
+    return staffList.stream()
+            .anyMatch(s -> s.getStaffId().equalsIgnoreCase(staffId));
+}
+
 }

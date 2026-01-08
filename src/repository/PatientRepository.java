@@ -246,4 +246,10 @@ public class PatientRepository {
     private String safe(String value) {
         return value == null ? "" : value.replace(",", " ");
     }
+
+    public boolean existsById(String patientId) {
+    return patients.stream()
+            .anyMatch(p -> p.getNhsNumber().equalsIgnoreCase(patientId));
+}
+
 }
