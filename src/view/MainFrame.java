@@ -36,13 +36,13 @@ import java.time.LocalDate;
  * ---------
  * Main GUI window for the Healthcare Referral System.
  *
- * ✅ MVC (View Layer) responsibilities:
+ *  MVC (View Layer) responsibilities:
  *  - Build Swing components (tabs, tables, buttons)
  *  - Display data returned by repositories
  *  - Capture user input via dialogs
  *  - Call repository/manager methods to perform CRUD
  *
- * ❌ View must NOT:
+ *  View must NOT:
  *  - Parse CSV directly
  *  - Perform file I/O
  *  - Contain business rules (validation beyond basic required-field checks)
@@ -141,8 +141,8 @@ public class MainFrame extends JFrame {
         staffRepository = new StaffRepository();
         facilityRepository = new FacilityRepository();
         appointmentRepository = new AppointmentRepository();
-        
-        
+
+          
 
         // ---------- Build tabbed UI ----------
         // Each tab is created by a dedicated method for clarity.
@@ -700,7 +700,7 @@ private void viewPatientPrescriptions() {
 
     clinicianTable = new JTable(clinicianTableModel);
 
-    // ✅ LOAD DATA
+    //  LOAD DATA
     loadClinicians();
 
     // -------- Buttons --------
@@ -726,7 +726,7 @@ private void viewPatientPrescriptions() {
     buttons.add(viewPrescriptionsBtn);
 
 
-    // ✅ THIS LINE WAS MISSING
+    //  THIS LINE WAS MISSING
     panel.add(new JScrollPane(clinicianTable), BorderLayout.CENTER);
 
     panel.add(buttons, BorderLayout.SOUTH);
@@ -761,7 +761,7 @@ private void addClinician() {
     JTextField idField = new JTextField();
     JTextField nameField = new JTextField();
 
-    // ✅ Dropdown instead of text field
+    //  Dropdown instead of text field
     JComboBox<String> roleCombo = new JComboBox<>(new String[]{
             "GP",
             "Consultant",
@@ -822,7 +822,7 @@ if (showClinicianMissingFields(
         Clinician clinician = new Clinician(
                 idField.getText().trim(),
                 nameField.getText().trim(),
-                roleCombo.getSelectedItem().toString(), // ✅ from dropdown
+                roleCombo.getSelectedItem().toString(), //  from dropdown
                 specialtyField.getText().trim(),
                 staffCodeField.getText().trim()
         );
@@ -2650,33 +2650,51 @@ private void viewStaff() {
 }
 
 
-    private void deleteStaff() {
-        int row = staffTable.getSelectedRow();
-        if (row == -1) {
-            JOptionPane.showMessageDialog(this, "Select a staff row first.");
-            return;
-        }
+private void deleteStaff() {
 
-        try {
-            String id = staffTableModel.getValueAt(row, 0).toString();
-
-            int confirm = JOptionPane.showConfirmDialog(
-                    this,
-                    "Delete staff: " + id + "?",
-                    "Confirm Delete",
-                    JOptionPane.YES_NO_OPTION
-            );
-
-            if (confirm != JOptionPane.YES_OPTION) return;
-
-
-
-            JOptionPane.showMessageDialog(this, "Staff deleted successfully.");
-
-        } catch (Exception ex) {
-            showError(ex);
-        }
+    int row = staffTable.getSelectedRow();
+    if (row == -1) {
+        JOptionPane.showMessageDialog(
+                this,
+                "Please select a staff member first.",
+                "No Selection",
+                JOptionPane.WARNING_MESSAGE
+        );
+        return;
     }
+
+    String staffId = staffTableModel.getValueAt(row, 0).toString();
+
+    int confirm = JOptionPane.showConfirmDialog(
+            this,
+            "Are you sure you want to delete staff member: " + staffId + "?",
+            "Confirm Delete",
+            JOptionPane.YES_NO_OPTION
+    );
+
+    if (confirm != JOptionPane.YES_OPTION) {
+        return;
+    }
+
+    try {
+        //  DELETE FROM REPOSITORY (CSV + memory)
+        staffRepository.deleteStaff(staffId);
+
+        //  REFRESH TABLE FROM SINGLE SOURCE OF TRUTH
+        refreshStaffTable();
+
+        JOptionPane.showMessageDialog(
+                this,
+                "Staff deleted successfully.",
+                "Success",
+                JOptionPane.INFORMATION_MESSAGE
+        );
+
+    } catch (Exception ex) {
+        showError(ex);
+    }
+}
+
 
 /* =========================================================
    FACILITIES TAB (ADD / EDIT / DELETE / VIEW)
@@ -2687,21 +2705,24 @@ private JPanel createFacilityPanel() {
 
     JPanel panel = new JPanel(new BorderLayout());
 
+    // ==============================
+    // TABLE MODEL (MUST COME FIRST)
+    // ==============================
     facilityTableModel = new DefaultTableModel(
-        new String[]{
-            "Facility ID",
-            "Name",
-            "Type",
-            "Address",
-            "Postcode",
-            "Phone Number",
-            "Email",
-            "Opening Hours",
-            "Manager Name",
-            "Capacity",
-            "Specialities Offered"
-        },
-        0
+            new String[]{
+                    "Facility ID",
+                    "Name",
+                    "Type",
+                    "Address",
+                    "Postcode",
+                    "Phone Number",
+                    "Email",
+                    "Opening Hours",
+                    "Manager Name",
+                    "Capacity",
+                    "Specialities Offered"
+            },
+            0
     );
 
     facilityTable = new JTable(facilityTableModel);
@@ -2709,10 +2730,20 @@ private JPanel createFacilityPanel() {
 
     panel.add(new JScrollPane(facilityTable), BorderLayout.CENTER);
 
-    // LOAD CSV ONCE
+    // ==============================
+    // LOAD CSV *AFTER* MODEL EXISTS
+    // ==============================
     try {
+
         facilityRepository.load("data/facilities.csv");
-        loadFacilities();
+
+System.out.println("Facilities loaded count = " 
+        + facilityRepository.getAllFacilities().size());
+
+loadFacilities();
+
+        facilityRepository.load("data/facilities.csv");
+        loadFacilities(); // ← THIS POPULATES THE TABLE
     } catch (Exception e) {
         JOptionPane.showMessageDialog(
                 this,
@@ -2720,14 +2751,18 @@ private JPanel createFacilityPanel() {
                 "Load Error",
                 JOptionPane.ERROR_MESSAGE
         );
+
+        
     }
 
+    // ==============================
+    // BUTTONS
+    // ==============================
     JButton addBtn = new JButton("Add Facility");
     JButton editBtn = new JButton("Edit Facility");
     JButton deleteBtn = new JButton("Delete Facility");
     JButton viewBtn = new JButton("View Facility");
 
-    // 🔑 USE CORRECT METHODS
     addBtn.addActionListener(e -> showFacilityForm());
     editBtn.addActionListener(e -> editFacility());
     deleteBtn.addActionListener(e -> deleteFacility());
@@ -2746,11 +2781,19 @@ private JPanel createFacilityPanel() {
 
 
 
+
 private void loadFacilities() {
 
-    facilityTableModel.setRowCount(0); // clear table first
+    if (facilityTableModel == null) {
+        return;
+    }
 
-    List<Facility> facilities = facilityRepository.getAllFacilities();
+    facilityTableModel.setRowCount(0);
+
+    //  THIS LINE IS CRITICAL
+    List<Facility> facilities = facilityRepository.getAll();
+
+    System.out.println("Facilities found: " + facilities.size());
 
     for (Facility f : facilities) {
         facilityTableModel.addRow(new Object[]{
@@ -2765,10 +2808,11 @@ private void loadFacilities() {
             f.getManagerName(),
             f.getCapacity(),
             f.getSpecialitiesOffered()
-});
-
+        });
     }
 }
+
+
 
 
 
@@ -2819,68 +2863,6 @@ private void viewFacility() {
             JOptionPane.INFORMATION_MESSAGE
     );
 }
-
-
-
-
-private void addFacility() {
-    try {
-        String id = promptRequired("Facility ID");
-        if (id == null) return;
-
-        String name = promptRequired("Facility Name");
-        if (name == null) return;
-
-        String type = promptRequired("Facility Type");
-        if (type == null) return;
-
-        String address = promptRequired("Address");
-        if (address == null) return;
-
-        String phone = promptRequired("Phone Number");
-        if (phone == null) return;
-
-        // ==============================
-// ENSURE A ROW IS SELECTED
-// ==============================
-int row = facilityTable.getSelectedRow();
-
-if (row == -1) {
-    JOptionPane.showMessageDialog(
-            this,
-            "Please select a facility first.",
-            "No Selection",
-            JOptionPane.WARNING_MESSAGE
-    );
-    return;
-}
-
-
-Facility f = new Facility(
-        facilityTableModel.getValueAt(row, 0).toString(),   // facility_id
-        facilityTableModel.getValueAt(row, 1).toString(),   // facility_name
-        facilityTableModel.getValueAt(row, 2).toString(),   // facility_type
-        facilityTableModel.getValueAt(row, 3).toString(),   // address
-        facilityTableModel.getValueAt(row, 4).toString(),   // postcode
-        facilityTableModel.getValueAt(row, 5).toString(),   // phone_number
-        facilityTableModel.getValueAt(row, 6).toString(),   // email
-        facilityTableModel.getValueAt(row, 7).toString(),   // opening_hours
-        facilityTableModel.getValueAt(row, 8).toString(),   // manager_name
-        Integer.parseInt(facilityTableModel.getValueAt(row, 9).toString()), // capacity
-        facilityTableModel.getValueAt(row, 10).toString()   // specialities_offered
-);
-
-
-        facilityRepository.addFacility(f);
-        loadFacilities();
-
-        JOptionPane.showMessageDialog(this, "Facility added successfully.");
-
-    } catch (Exception e) {
-        showError(e);
-    }
-}
-
 
 private void editFacility() {
 
