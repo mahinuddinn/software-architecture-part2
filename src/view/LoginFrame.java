@@ -1,76 +1,72 @@
 package view;
 
-import model.UserRole;
-import model.UserSession;
-
 import javax.swing.*;
 import java.awt.*;
 
-/**
- * LoginFrame
- * ----------
- * Login screen for role-based access control.
- */
+import model.UserSession;
+
 public class LoginFrame extends JFrame {
 
     public LoginFrame() {
 
         setTitle("Healthcare System Login");
-        setSize(350, 250);
+        setSize(400, 200);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
 
-        // ----------------------------
-        // UI Components
-        // ----------------------------
-        JTextField idField = new JTextField();
-        JComboBox<UserRole> roleBox = new JComboBox<>(UserRole.values());
+        JPanel panel = new JPanel(new GridLayout(3, 2, 10, 10));
+
+        JLabel userLabel = new JLabel("User ID:");
+        JTextField userField = new JTextField();
+
+        JLabel roleLabel = new JLabel("Role:");
+        JComboBox<String> roleBox = new JComboBox<>(new String[]{
+                "PATIENT",
+                "CLINICIAN",
+                "DOCTOR",
+                "STAFF"
+        });
+
         JButton loginBtn = new JButton("Login");
 
-        // ----------------------------
-        // Layout
-        // ----------------------------
-        JPanel panel = new JPanel(new GridLayout(0, 1, 8, 8));
-        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-
-        panel.add(new JLabel("User ID:"));
-        panel.add(idField);
-
-        panel.add(new JLabel("Role:"));
+        panel.add(userLabel);
+        panel.add(userField);
+        panel.add(roleLabel);
         panel.add(roleBox);
-
+        panel.add(new JLabel()); // spacer
         panel.add(loginBtn);
 
         add(panel);
 
-        // ----------------------------
-        // Login Button Action
-        // ----------------------------
-        loginBtn.addActionListener(e -> {
+        // ===============================
+        // LOGIN BUTTON ACTION
+        // ===============================
+loginBtn.addActionListener(e -> {
 
-            String id = idField.getText().trim();
-            UserRole role = (UserRole) roleBox.getSelectedItem();
+    String id = userField.getText().trim();
+    String role = roleBox.getSelectedItem().toString();
 
-            if (id.isEmpty()) {
-                JOptionPane.showMessageDialog(
-                        this,
-                        "User ID required",
-                        "Login Error",
-                        JOptionPane.WARNING_MESSAGE
-                );
-                return;
-            }
+    // Basic validation
+    if (id.isEmpty()) {
+        JOptionPane.showMessageDialog(
+                this,
+                "User ID is required.",
+                "Login Error",
+                JOptionPane.ERROR_MESSAGE
+        );
+        return;
+    }
 
-            // Save logged-in user session
-            UserSession.login(id, role);
+    // Save session
+    UserSession.login(id, role);
 
-            // Open main application
-            new MainFrame();
+    // Open main system
+    MainFrame frame = new MainFrame();
+    frame.setVisible(true);
 
-            // Close login window
-            dispose();
-        });
+    // Close login window
+    dispose();
+});
 
-        setVisible(true);
     }
 }

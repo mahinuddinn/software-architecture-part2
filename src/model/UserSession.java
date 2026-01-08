@@ -1,29 +1,57 @@
 package model;
 
 /**
- * Stores the currently logged-in user.
- * Used for role-based access control across the system.
+ * UserSession
+ * -----------
+ * Holds the currently logged-in user's identity and role.
+ * Acts as a simple session manager for role-based access control.
  */
 public class UserSession {
 
     private static String userId;
-    private static UserRole role;
+    private static String role;
 
-    public static void login(String id, UserRole userRole) {
+    /** Log a user into the system */
+    public static void login(String id, String userRole) {
         userId = id;
         role = userRole;
     }
 
+    /** Clear session (logout) */
+    public static void logout() {
+        userId = null;
+        role = null;
+    }
+
+    /** Check if someone is logged in */
+    public static boolean isLoggedIn() {
+        return userId != null;
+    }
+
+    /** Get logged-in user ID */
     public static String getUserId() {
         return userId;
     }
 
-    public static UserRole getRole() {
+    /** Get logged-in role */
+    public static String getRole() {
         return role;
     }
 
-    public static void logout() {
-        userId = null;
-        role = null;
+    /** Role helpers (clean + readable) */
+    public static boolean isPatient() {
+        return "PATIENT".equalsIgnoreCase(role);
+    }
+
+    public static boolean isClinician() {
+        return "CLINICIAN".equalsIgnoreCase(role);
+    }
+
+    public static boolean isDoctor() {
+        return "DOCTOR".equalsIgnoreCase(role);
+    }
+
+    public static boolean isStaff() {
+        return "STAFF".equalsIgnoreCase(role);
     }
 }

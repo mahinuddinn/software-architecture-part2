@@ -4069,31 +4069,43 @@ private boolean showMissingFieldsPopup(String title, String... fields) {
  */
 private void applyRolePermissions(JTabbedPane tabs) {
 
-    switch (UserSession.getRole()) {
+switch (UserSession.getRole()) {
 
-        case PATIENT:
-            tabs.setEnabledAt(1, false); // Clinicians
-            tabs.setEnabledAt(2, false); // Prescriptions
-            tabs.setEnabledAt(3, false); // Referrals
-            tabs.setEnabledAt(4, false); // Staff
-            tabs.setEnabledAt(5, false); // Facilities
-            break;
+    case "PATIENT":
+        // Patients: limited access
+        tabs.setEnabledAt(1, false);
+        tabs.setEnabledAt(2, false);
+        tabs.setEnabledAt(3, false);
+        tabs.setEnabledAt(4, false);
+        tabs.setEnabledAt(5, false);
+        break;
 
-        case CLINICIAN:
-            tabs.setEnabledAt(4, false); // Staff
-            tabs.setEnabledAt(5, false); // Facilities
-            break;
+    case "CLINICIAN":
+        // Clinicians: no staff / facility admin
+        tabs.setEnabledAt(4, false);
+        tabs.setEnabledAt(5, false);
+        break;
 
-        case DOCTOR:
-            // Full access
-            break;
+    case "DOCTOR":
+        // Doctors: full access
+        break;
 
-        case STAFF:
-            tabs.setEnabledAt(0, false); // Patients
-            tabs.setEnabledAt(2, false); // Prescriptions
-            tabs.setEnabledAt(3, false); // Referrals
-            break;
-    }
+    case "STAFF":
+        // Staff: no clinical data
+        tabs.setEnabledAt(0, false); // Patients
+        tabs.setEnabledAt(1, false); // Clinicians
+        tabs.setEnabledAt(2, false); // Prescriptions
+        break;
+
+    default:
+        // Safety fallback
+        JOptionPane.showMessageDialog(
+                this,
+                "Unknown role: " + UserSession.getRole(),
+                "Access Error",
+                JOptionPane.ERROR_MESSAGE
+        );
+}
 }
 
 
